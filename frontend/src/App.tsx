@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { ScanProgress } from './components/ScanProgress'
 import { FilterSettings } from './components/FilterSettings'
 import { SizeFilter } from './components/SizeFilter'
+import { ExtensionCategories } from './components/ExtensionCategories'
 import { TreeMapWebGL } from './components/TreeMapWebGL'
 import { ExtensionLegend } from './components/ExtensionLegend'
 import { ExtensionStats } from './components/ExtensionStats'
@@ -9,7 +10,8 @@ import { useScanWebSocket } from './hooks/useScanWebSocket'
 import { Button } from './components/ui/button'
 import { Input } from './components/ui/input'
 import { Alert, AlertDescription } from './components/ui/alert'
-import { AlertCircle } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs'
+import { AlertCircle, BarChart3, Settings } from 'lucide-react'
 import './App.css'
 
 export default function App() {
@@ -26,12 +28,15 @@ export default function App() {
     })
   }
 
-  useEffect(() => {
-    // Load configuration
+  const loadConfig = () => {
     fetch('/api/config')
       .then(res => res.json())
       .then(setConfig)
       .catch(console.error)
+  }
+
+  useEffect(() => {
+    loadConfig()
   }, [])
 
   const handleScan = () => {
@@ -87,32 +92,60 @@ export default function App() {
             </Alert>
           )}
 
-          {/* Filter Settings */}
-          {config && <FilterSettings config={config} />}
+          {/* Tabbed Interface */}
+          <Tabs defaultValue="visualization" className="w-full">
+            <TabsList>
+              <TabsTrigger value="visualization">
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Visualization
+              </TabsTrigger>
+              <TabsTrigger value="settings">
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Size Filter */}
-          <SizeFilter onFilterChange={handleSizeFilterChange} />
-
-          {/* Results */}
-          {tree && !scanning && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-semibold">Results</h2>
-                {fromCache && (
-                  <span className="text-sm text-muted-foreground">Loaded from cache</span>
-                )}
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div className="lg:col-span-2">
-                  <TreeMapWebGL data={tree} config={config} />
-                </div>
+            <TabsContent value="visualization">
+              {/* Results */}
+              {tree && !scanning && (
                 <div className="space-y-4">
-                  <ExtensionStats tree={tree} />
-                  <ExtensionLegend config={config} tree={tree} />
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-semibold">Results</h2>
+                    {fromCache && (
+                      <span className="text-sm text-muted-foreground">Loaded from cache</span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div className="lg:col-span-2">
+                      <TreeMapWebGL data={tree} config={config} />
+                    </div>
+                    <div className="space-y-4">
+                      <ExtensionStats tree={tree} />
+                      <ExtensionLegend config={config} tree={tree} />
+                    </div>
+                  </div>
+                </div>
+              )}
+              {!tree && !scanning && (
+                <div className="text-center py-12 text-muted-foreground">
+                  Enter a path and click Scan to visualize disk usage
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="settings">
+              <div className="space-y-4">
+                <h2 className="text-2xl font-semibold">Settings</h2>
+
+                {config && <FilterSettings config={config} />}
+                <SizeFilter onFilterChange={handleSizeFilterChange} />
+
+                <div className="text-sm text-muted-foreground pt-4">
+                  Settings apply to the next scan. Clear cache to re-scan with new filters.
                 </div>
               </div>
-            </div>
-          )}
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
     </div>

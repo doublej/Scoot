@@ -125,9 +125,64 @@ class FilterUpdate(BaseModel):
     min_file_size: int
 
 
+class ExcludePatternsUpdate(BaseModel):
+    patterns: List[str]
+
+
+class ExtensionCategoryUpdate(BaseModel):
+    name: str
+    color: str
+    extensions: List[str]
+    description: str = ""
+    icon: str = ""
+
+
 @app.post("/api/config/filter")
 async def update_filter(update: FilterUpdate):
-    """Update filter configuration temporarily."""
-    # Note: This updates the runtime config, not the file
-    config._data.setdefault('filters', {})['min_file_size'] = update.min_file_size
+    """Update filter configuration."""
+    config.set('filters.min_file_size', update.min_file_size)
+    config.save()
     return {"min_file_size": update.min_file_size}
+
+
+@app.post("/api/config/exclude-patterns")
+async def update_exclude_patterns(update: ExcludePatternsUpdate):
+    """Update exclude patterns."""
+    config.set('filters.exclude_patterns', update.patterns)
+    config.save()
+    return {"patterns": update.patterns}
+
+
+@app.post("/api/config/extension-category")
+async def update_extension_category(update: ExtensionCategoryUpdate):
+    """Add or update extension category."""
+    category_data = {
+        'color': update.color,
+        'extensions': update.extensions,
+        'description': update.description,
+        'icon': update.icon
+    }
+
+    if 'extension_templates' not in config._data:
+        config._data['extension_templates'] = {}
+
+    config._data['extension_templates'][update.name] = category_data
+    config.save()
+    return {"category": update.name, "data": category_data}
+
+
+@app.delete("/api/config/extension-category/{category_name}")
+async def delete_extension_category(category_name: str):
+    """Delete extension category."""
+    if 'extension_templates' in config._data and category_name in config._data['extension_templates']:
+        del config._data['extension_templates'][category_name]
+        config.save()
+        return {"deleted": category_name}
+    raise HTTPException(status_code=404, detail="Category not found")
+
+
+@app.post("/api/config/reload")
+async def reload_config():
+    """Reload configuration from file."""
+    config.load()
+    return {"message": "Configuration reloaded"}

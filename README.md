@@ -1,140 +1,128 @@
 # Disk Usage Analyzer
 
-Python port of KDirStat with WebGL treemap visualization.
+Modern web-based disk usage analyzer with real-time scanning progress, built with Python (FastAPI) backend and React (shadcn/ui) frontend.
 
-![3D Depth Visualization](docs/screenshots/depth-mode-3d.png)
-*3D depth mode - elevation represents folder nesting level*
+![3D Visualization](screenshot-3d.png)
+*3D depth visualization showing folder nesting levels*
 
-## Features
+![UI Overview](screenshot-ui.png)
+*Main interface with statistics and file type breakdown*
 
-### Visualization
-- WebGL rendering using Three.js
-- 2D flat treemap layout
-- 3D mode with extruded boxes
-- Orbit/pan/zoom camera controls
-- Hover tooltips with file details
+## ✨ Features
 
-### Depth Modes
-- **Size**: Box height = file size (logarithmic scale)
-- **Depth**: Box elevation = nesting level
-  - Color gradient: blue (root) to red (deep)
-  - Identifies deeply nested folder structures
+- **Real-time progress tracking** via WebSocket
+- **Visual treemap** with D3.js - color-coded by file extension
+- **YAML configuration** - all settings in one file
+- **Extension templates** - predefined categories (code, documents, images, etc.)
+- **Special folder handling** - system folders, dev folders, applications
+- **Smart filtering** - excludes node_modules, .git, __pycache__ by default
+- **Modern UI** - shadcn/ui components with Tailwind CSS
 
-### File Classification
-- 19 extension categories covering 344+ file types
-- Color-coded by category
-- Categories: code, documents, images, videos, audio, archives, 3D models, fonts, spreadsheets, presentations, binaries, databases, scripts, encrypted, system files, disk images, web assets, ebooks
+## 🚀 Quick Start
 
-### Implementation
-- Async filesystem scanner with progress callbacks
-- In-memory result caching (LRU, configurable size)
-- WebSocket for real-time scan updates
-- Configurable exclusion patterns
-- Scan cancellation support
+### Prerequisites
 
-## Quick Start
+- Python 3.11+
+- Node.js 18+
+- uv (Python package manager)
 
-### Backend (FastAPI + Python)
-```bash
+### Backend Setup
+
+\`\`\`bash
 cd codex
+
+# Create virtual environment
 uv venv
-source .venv/bin/activate
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install dependencies
 uv pip install -e .[dev]
+
+# Start the backend server
 python run_server.py
-```
+\`\`\`
 
-Server runs on http://localhost:8924
+Backend will be running at http://localhost:8924
 
-### Frontend (React + Vite)
-```bash
+### Frontend Setup
+
+**In a new terminal:**
+
+\`\`\`bash
 cd codex/frontend
+
+# Install dependencies
 npm install
+
+# Start the development server
 npm run dev
-```
+\`\`\`
 
-Frontend runs on http://localhost:5173
+Frontend will be running at http://localhost:5173
 
-## Usage
+### Access the Application
 
-1. Enter directory path
-2. Click Scan
-3. Toggle 2D/3D mode
-4. In 3D mode, select Size or Depth visualization
+Open your browser and navigate to **http://localhost:5173**
 
-**Controls:**
-- Left drag: rotate
-- Right drag: pan
-- Scroll: zoom
-- Hover: file details
+## 📁 Project Structure
 
-## Configuration
-
-Edit `config.yaml`:
-- Exclusion patterns
-- Extension categories and colors
-- Special folder definitions
-- Performance limits
-
-## Architecture
-
-```
+\`\`\`
 codex/
-├── src/diskusage/        # Backend Python modules
-│   ├── scanner/          # Filesystem scanning (sync & async)
-│   ├── model/            # Tree structures and statistics
-│   ├── cache/            # Result caching
-│   ├── config/           # YAML configuration
-│   └── web/              # FastAPI + WebSocket server
-├── frontend/             # React + TypeScript frontend
-│   └── src/
-│       ├── components/   # React components
-│       │   ├── TreeMapWebGL.tsx     # 3D visualization
-│       │   ├── ExtensionLegend.tsx  # Category breakdown
-│       │   └── ExtensionStats.tsx   # Statistics panel
-│       └── hooks/        # WebSocket integration
-└── tests/                # Unit and integration tests
-```
+├── config.yaml              # ALL configuration in one file
+├── run_server.py            # Backend server entry point
+├── src/diskusage/
+│   ├── scanner/
+│   │   ├── base.py          # Core abstractions
+│   │   ├── local.py         # Sync scanner
+│   │   ├── async_scanner.py # Async with progress callbacks
+│   │   └── filters.py       # Exclusion patterns
+│   ├── model/               # Tree data structures
+│   ├── config/
+│   │   └── settings.py      # YAML config loader
+│   └── web/
+│       ├── api.py           # FastAPI REST + WebSocket
+│       └── websocket.py     # Progress handler
+└── frontend/                # React + shadcn/ui
+    ├── src/
+    │   ├── components/
+    │   │   ├── ui/          # shadcn/ui primitives
+    │   │   ├── ScanProgress.tsx
+    │   │   ├── FilterSettings.tsx
+    │   │   └── TreeMap.tsx
+    │   ├── hooks/
+    │   │   └── useScanWebSocket.ts
+    │   └── App.tsx
+    └── package.json
+\`\`\`
 
-## Technology Stack
+## ⚙️ Configuration
 
-**Backend:**
-- Python 3.11+ with type hints
-- FastAPI for REST + WebSocket API
-- Uvicorn ASGI server
-- PyYAML for configuration
+All configuration is in \`config.yaml\`
 
-**Frontend:**
-- React 18 with TypeScript
-- Three.js for WebGL rendering
-- D3.js for treemap layout
-- shadcn/ui components
-- Tailwind CSS
-- Vite build system
+## 🔌 API Endpoints
 
-## Development
+### REST API
 
-### Testing
-```bash
-cd codex
-pytest                              # Run all tests
-pytest tests/unit/test_scanner.py  # Specific test file
-```
+- \`GET /\` - API information
+- \`POST /api/scan\` - Synchronous scan
+- \`GET /api/config\` - Get configuration
 
-### API Endpoints
-- `POST /api/scan` - Synchronous scan
-- `WS /ws/scan?path=<path>` - Real-time scan with progress
-- `GET /api/config` - Get configuration
-- `GET /api/cache/status` - Cache statistics
-- `DELETE /api/cache` - Clear cache
+### WebSocket
 
-## Performance
+- \`WS /ws/scan?path=<path>\` - Real-time scan with progress updates
 
-Tested on MacBook Pro M1:
-- 100k files: ~3s scan time
-- 1M files: ~180MB memory
-- WebGL: 60 FPS up to 150k nodes
-- Progress updates: every 100 files
+## 🎨 Frontend Components
 
-## Credits
+All components use **shadcn/ui** (Radix UI + Tailwind)
 
-Python port of [KDirStat](https://github.com/shundhammer/kdirstat) by Stefan Hundhammer.
+## 📦 Dependencies
+
+### Backend
+- FastAPI, uvicorn, websockets, pyyaml
+
+### Frontend
+- React 18, TypeScript, Vite, shadcn/ui, Tailwind CSS, D3.js, Lucide React
+
+## 📄 License
+
+GPL-2.0-or-later

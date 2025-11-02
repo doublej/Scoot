@@ -25,6 +25,11 @@ class Config:
         with open(self.config_path, 'r') as f:
             self._data = yaml.safe_load(f)
 
+    def save(self) -> None:
+        """Save configuration to YAML file."""
+        with open(self.config_path, 'w') as f:
+            yaml.safe_dump(self._data, f, default_flow_style=False, sort_keys=False)
+
     def get(self, key: str, default: Any = None) -> Any:
         """Get configuration value by dot-notation key."""
         keys = key.split('.')
@@ -39,6 +44,18 @@ class Config:
                 return default
 
         return value
+
+    def set(self, key: str, value: Any) -> None:
+        """Set configuration value by dot-notation key."""
+        keys = key.split('.')
+        data = self._data
+
+        for k in keys[:-1]:
+            if k not in data:
+                data[k] = {}
+            data = data[k]
+
+        data[keys[-1]] = value
 
     @property
     def exclude_patterns(self) -> List[str]:
