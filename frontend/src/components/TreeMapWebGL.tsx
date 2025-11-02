@@ -1,0 +1,340 @@
+import { useEffect, useRef, useState } from 'react'
+import * as THREE from 'three'
+import { OrbitControls } from 'three-stdlib'
+import * as d3 from 'd3'
+import { formatBytes } from '../lib/utils'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
+import { BarChart3, Box, Layers } from 'lucide-react'
+import { Button } from './ui/button'
+
+interface Props {
+  data: any
+  config: any
+}
+
+type ViewMode = '2d' | '3d'
+type VisualizationMode = 'size' | 'depth'
+
+export function TreeMapWebGL({ data, config }: Props) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null)
+  const sceneRef = useRef<THREE.Scene | null>(null)
+  const cameraRef = useRef<THREE.Camera | null>(null)
+  const controlsRef = useRef<OrbitControls | null>(null)
+  const hoveredMeshRef = useRef<THREE.Mesh | null>(null)
+  const [tooltip, setTooltip] = useState<{text: string, x: number, y: number} | null>(null)
+  const [viewMode, setViewMode] = useState<ViewMode>('2d')
+  const [vizMode, setVizMode] = useState<VisualizationMode>('size')
+
+  useEffect(() => {
+    if (!containerRef.current || !data) return
+
+    const width = containerRef.current.clientWidth
+    const height = 600
+
+    // Scene setup
+    const scene = new THREE.Scene()
+    scene.background = new THREE.Color(0x0a0a0a)
+    sceneRef.current = scene
+
+    // Camera setup based on mode
+    let camera: THREE.Camera
+    if (viewMode === '3d') {
+      camera = new THREE.PerspectiveCamera(60, width / height, 1, 10000)
+      camera.position.set(width / 2, height / 2, Math.max(width, height))
+      camera.lookAt(width / 2, height / 2, 0)
+    } else {
+      camera = new THREE.OrthographicCamera(0, width, height, 0, 1, 1000)
+      camera.position.z = 100
+    }
+    cameraRef.current = camera
+
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true })
+    renderer.setSize(width, height)
+    renderer.setPixelRatio(window.devicePixelRatio)
+    rendererRef.current = renderer
+
+    containerRef.current.appendChild(renderer.domElement)
+
+    // Lighting for 3D mode
+    if (viewMode === '3d') {
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
+      scene.add(ambientLight)
+
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
+      directionalLight.position.set(width / 2, height / 2, Math.max(width, height))
+      scene.add(directionalLight)
+
+      const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.4)
+      directionalLight2.position.set(-width / 2, -height / 2, Math.max(width, height) / 2)
+      scene.add(directionalLight2)
+    }
+
+    // Orbit controls for 3D mode
+    let controls: OrbitControls | null = null
+    if (viewMode === '3d' && camera instanceof THREE.PerspectiveCamera) {
+      controls = new OrbitControls(camera, renderer.domElement)
+      controls.enableDamping = true
+      controls.dampingFactor = 0.05
+      controls.target.set(width / 2, height / 2, 0)
+      controls.update()
+      controlsRef.current = controls
+    }
+
+    // Build treemap data
+    const hierarchy = d3.hierarchy(data)
+      .sum(d => d.is_directory ? 0 : d.size)
+      .sort((a, b) => (b.value || 0) - (a.value || 0))
+
+    const treemap = d3.treemap<any>()
+      .size([width, height])
+      .padding(1)
+      .round(true)
+
+    treemap(hierarchy)
+
+    console.log('Treemap hierarchy leaves:', hierarchy.leaves().length)
+
+    // Find max depth for normalization
+    const maxDepth = Math.max(...hierarchy.leaves().map((n: any) => n.depth))
+
+    // Create meshes for each node
+    const meshes: THREE.Mesh[] = []
+    const raycaster = new THREE.Raycaster()
+    const mouse = new THREE.Vector2()
+
+    hierarchy.leaves().forEach((node: any) => {
+      const w = node.x1 - node.x0
+      const h = node.y1 - node.y0
+
+      if (w < 2 || h < 2) return
+
+      // Get color based on mode
+      let color = 0x4a90e2
+
+      if (vizMode === 'depth') {
+        // Color by depth - gradient from blue to red
+        const depthRatio = node.depth / maxDepth
+        const hue = (1 - depthRatio) * 240 // 240 = blue, 0 = red
+        const tempColor = new THREE.Color()
+        tempColor.setHSL(hue / 360, 0.8, 0.5)
+        color = tempColor.getHex()
+      } else {
+        // Color by extension/folder type
+        if (node.data.extension_info?.color) {
+          const hexColor = node.data.extension_info.color.replace('#', '')
+          color = parseInt(hexColor, 16)
+        } else if (node.data.folder_info?.color) {
+          const hexColor = node.data.folder_info.color.replace('#', '')
+          color = parseInt(hexColor, 16)
+        } else {
+          const colors = [0x3b82f6, 0x8b5cf6, 0xec4899, 0xf59e0b, 0x10b981, 0x06b6d4]
+          color = colors[node.depth % colors.length]
+        }
+      }
+
+      // Create geometry based on mode
+      let geometry: THREE.BufferGeometry
+      let boxHeight = 1
+      let zPosition = 0
+
+      if (viewMode === '3d') {
+        if (vizMode === 'depth') {
+          // Height represents nesting level
+          boxHeight = (node.depth + 1) * 20
+          // Elevation based on depth (staircase effect)
+          zPosition = node.depth * 30
+        } else {
+          // Height represents file size
+          boxHeight = Math.max(5, Math.log10(node.data.size + 1) * 10)
+          zPosition = boxHeight / 2
+        }
+        geometry = new THREE.BoxGeometry(w, h, boxHeight)
+      } else {
+        geometry = new THREE.PlaneGeometry(w, h)
+      }
+
+      const material = viewMode === '3d'
+        ? new THREE.MeshStandardMaterial({ color, metalness: 0.3, roughness: 0.7 })
+        : new THREE.MeshBasicMaterial({ color })
+
+      const mesh = new THREE.Mesh(geometry, material)
+
+      // Position
+      if (viewMode === '3d') {
+        mesh.position.set(
+          node.x0 + w / 2,
+          height - (node.y0 + h / 2),
+          zPosition
+        )
+      } else {
+        mesh.position.set(
+          node.x0 + w / 2,
+          height - (node.y0 + h / 2),
+          0
+        )
+      }
+
+      mesh.userData = {
+        name: node.data.name,
+        size: node.data.size,
+        depth: node.depth,
+        originalColor: color
+      }
+
+      scene.add(mesh)
+      meshes.push(mesh)
+    })
+
+    console.log('Created meshes:', meshes.length)
+    console.log('Scene children:', scene.children.length)
+
+    // Mouse interaction with zoom
+    let zoomLevel = 1
+    const maxZoom = 10
+    const minZoom = 1
+
+    const onMouseMove = (event: MouseEvent) => {
+      const rect = renderer.domElement.getBoundingClientRect()
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+
+      raycaster.setFromCamera(mouse, camera)
+      const intersects = raycaster.intersectObjects(meshes)
+
+      // Reset previous hovered mesh
+      if (hoveredMeshRef.current) {
+        const mat = hoveredMeshRef.current.material as THREE.MeshBasicMaterial
+        mat.color.setHex(hoveredMeshRef.current.userData.originalColor)
+        hoveredMeshRef.current = null
+        setTooltip(null)
+      }
+
+      // Highlight new hovered mesh
+      if (intersects.length > 0) {
+        const mesh = intersects[0].object as THREE.Mesh
+        const mat = mesh.material as THREE.MeshBasicMaterial
+        mat.color.setHex(0x0e639c)
+        hoveredMeshRef.current = mesh
+
+        const depthInfo = viewMode === '3d' && vizMode === 'depth'
+          ? `\nDepth: ${mesh.userData.depth}`
+          : ''
+        setTooltip({
+          text: `${mesh.userData.name}\n${formatBytes(mesh.userData.size)}${depthInfo}`,
+          x: event.clientX,
+          y: event.clientY
+        })
+      }
+    }
+
+    const onWheel = (event: WheelEvent) => {
+      event.preventDefault()
+
+      if (viewMode === '2d' && camera instanceof THREE.OrthographicCamera) {
+        const delta = event.deltaY * -0.001
+        zoomLevel = Math.max(minZoom, Math.min(maxZoom, zoomLevel + delta))
+        camera.zoom = zoomLevel
+        camera.updateProjectionMatrix()
+      }
+    }
+
+    renderer.domElement.addEventListener('mousemove', onMouseMove)
+    renderer.domElement.addEventListener('wheel', onWheel, { passive: false })
+
+    // Render loop
+    const animate = () => {
+      requestAnimationFrame(animate)
+      if (controls) {
+        controls.update()
+      }
+      renderer.render(scene, camera)
+    }
+    animate()
+
+    // Cleanup
+    return () => {
+      renderer.domElement.removeEventListener('mousemove', onMouseMove)
+      renderer.domElement.removeEventListener('wheel', onWheel)
+      if (controls) {
+        controls.dispose()
+      }
+      renderer.dispose()
+      if (containerRef.current && renderer.domElement.parentNode === containerRef.current) {
+        containerRef.current.removeChild(renderer.domElement)
+      }
+    }
+  }, [data, config, viewMode, vizMode])
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Disk Usage Treemap (WebGL)
+            </CardTitle>
+            <CardDescription>
+              GPU-accelerated visualization. {viewMode === '3d' ? 'Drag to rotate, scroll to zoom' : 'Hover over tiles for details'}
+            </CardDescription>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant={viewMode === '2d' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('2d')}
+            >
+              <Layers className="h-4 w-4 mr-1" />
+              2D
+            </Button>
+            <Button
+              variant={viewMode === '3d' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('3d')}
+            >
+              <Box className="h-4 w-4 mr-1" />
+              3D
+            </Button>
+            {viewMode === '3d' && (
+              <>
+                <div className="border-l mx-1" />
+                <Button
+                  variant={vizMode === 'size' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setVizMode('size')}
+                >
+                  Size
+                </Button>
+                <Button
+                  variant={vizMode === 'depth' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setVizMode('depth')}
+                >
+                  Depth
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="border rounded-md overflow-hidden bg-muted/30 relative">
+          <div ref={containerRef} />
+          {tooltip && (
+            <div
+              className="fixed pointer-events-none bg-black/90 text-white px-3 py-2 rounded text-sm whitespace-pre-line z-50"
+              style={{
+                left: tooltip.x + 10,
+                top: tooltip.y - 50
+              }}
+            >
+              {tooltip.text}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
