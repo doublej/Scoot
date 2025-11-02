@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { ScanProgress } from './components/ScanProgress'
 import { FilterSettings } from './components/FilterSettings'
 import { TreeMapWebGL } from './components/TreeMapWebGL'
+import { ExtensionLegend } from './components/ExtensionLegend'
+import { ExtensionStats } from './components/ExtensionStats'
 import { useScanWebSocket } from './hooks/useScanWebSocket'
 import { Button } from './components/ui/button'
 import { Input } from './components/ui/input'
@@ -87,7 +89,15 @@ export default function App() {
                   <span className="text-sm text-muted-foreground">Loaded from cache</span>
                 )}
               </div>
-              <TreeMapWebGL data={tree} config={config} />
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div className="lg:col-span-2">
+                  <TreeMapWebGL data={tree} config={config} />
+                </div>
+                <div className="space-y-4">
+                  <ExtensionStats tree={tree} />
+                  <ExtensionLegend config={config} tree={tree} />
+                </div>
+              </div>
             </div>
           )}
         </div>

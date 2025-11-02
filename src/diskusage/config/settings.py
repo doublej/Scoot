@@ -86,14 +86,15 @@ class Config:
         return self.get('server.cors_origins', [])
 
     def get_extension_info(self, ext: str) -> Optional[Dict]:
-        """Get color and icon for file extension."""
+        """Get color, icon, and description for file extension."""
         ext = ext.lower()
         for template_name, template_data in self.extension_templates.items():
             if ext in template_data.get('extensions', []):
                 return {
                     'category': template_name,
                     'color': template_data.get('color'),
-                    'icon': template_data.get('icon')
+                    'icon': template_data.get('icon'),
+                    'description': template_data.get('description')
                 }
         return None
 
