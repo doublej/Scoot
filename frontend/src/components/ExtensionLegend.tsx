@@ -21,6 +21,7 @@ export function ExtensionLegend({ config, tree }: Props) {
   const categoryStats: Record<string, CategoryStats> = {}
 
   const traverseTree = (node: any) => {
+    // Process files with extension info
     if (!node.is_directory && node.extension_info) {
       const category = node.extension_info.category
       if (!categoryStats[category]) {
@@ -30,6 +31,21 @@ export function ExtensionLegend({ config, tree }: Props) {
           totalSize: 0,
           color: templateData?.color || '#gray',
           description: templateData?.description || ''
+        }
+      }
+      categoryStats[category].count++
+      categoryStats[category].totalSize += node.size
+    }
+
+    // Process folders with folder info
+    if (node.is_directory && node.folder_info) {
+      const category = node.folder_info.category
+      if (!categoryStats[category]) {
+        categoryStats[category] = {
+          count: 0,
+          totalSize: 0,
+          color: node.folder_info.color || '#gray',
+          description: node.folder_info.description || ''
         }
       }
       categoryStats[category].count++
@@ -56,7 +72,7 @@ export function ExtensionLegend({ config, tree }: Props) {
       <CardHeader>
         <CardTitle>File Type Breakdown</CardTitle>
         <CardDescription>
-          Distribution of files by category
+          Distribution of files and folders by category
         </CardDescription>
       </CardHeader>
       <CardContent>

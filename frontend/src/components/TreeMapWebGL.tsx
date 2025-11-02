@@ -84,7 +84,12 @@ export function TreeMapWebGL({ data, config }: Props) {
 
     // Build treemap data
     const hierarchy = d3.hierarchy(data)
-      .sum(d => d.is_directory ? 0 : d.size)
+      .sum(d => {
+        if (d.is_directory) {
+          return d.at_depth_limit ? d.size : 0
+        }
+        return d.size
+      })
       .sort((a, b) => (b.value || 0) - (a.value || 0))
 
     const treemap = d3.treemap<any>()
@@ -128,6 +133,7 @@ export function TreeMapWebGL({ data, config }: Props) {
 
       // Get color based on mode
       let color = 0x4a90e2
+      const isDepthLimit = node.data.at_depth_limit === true
 
       if (vizMode === 'depth') {
         // Color by depth - gradient from blue to red
@@ -136,9 +142,17 @@ export function TreeMapWebGL({ data, config }: Props) {
         const tempColor = new THREE.Color()
         tempColor.setHSL(hue / 360, 0.8, 0.5)
         color = tempColor.getHex()
+
+        // Override for depth-limit folders
+        if (isDepthLimit) {
+          color = 0xfb923c // Orange for depth-limit folders
+        }
       } else {
         // Color by extension/folder type
-        if (node.data.extension_info?.color) {
+        if (isDepthLimit) {
+          // Depth-limit folders get distinct orange color
+          color = 0xfb923c
+        } else if (node.data.extension_info?.color) {
           const hexColor = node.data.extension_info.color.replace('#', '')
           color = parseInt(hexColor, 16)
         } else if (node.data.folder_info?.color) {
@@ -156,7 +170,11 @@ export function TreeMapWebGL({ data, config }: Props) {
       let zPosition = 0
 
       if (viewMode === '3d') {
-        if (vizMode === 'depth') {
+        if (isDepthLimit) {
+          // Depth-limit folders: flat with moderate height to stand out
+          boxHeight = 15
+          zPosition = boxHeight / 2
+        } else if (vizMode === 'depth') {
           // Height represents nesting level
           boxHeight = (node.depth + 1) * 20
           // Elevation based on depth (staircase effect)
@@ -194,9 +212,11 @@ export function TreeMapWebGL({ data, config }: Props) {
 
       mesh.userData = {
         name: node.data.name,
+        path: node.data.path || node.data.name,
         size: node.data.size,
         depth: node.depth,
-        originalColor: color
+        originalColor: color,
+        at_depth_limit: isDepthLimit
       }
 
       scene.add(mesh)
@@ -237,8 +257,11 @@ export function TreeMapWebGL({ data, config }: Props) {
         const depthInfo = viewMode === '3d' && vizMode === 'depth'
           ? `\nDepth: ${mesh.userData.depth}`
           : ''
+        const depthLimitInfo = mesh.userData.at_depth_limit
+          ? '\n⚠️ At depth limit (aggregate size)'
+          : ''
         setTooltip({
-          text: `${mesh.userData.name}\n${formatBytes(mesh.userData.size)}${depthInfo}`,
+          text: `${mesh.userData.path}\n${formatBytes(mesh.userData.size)}${depthInfo}${depthLimitInfo}`,
           x: event.clientX,
           y: event.clientY
         })
@@ -340,7 +363,7 @@ export function TreeMapWebGL({ data, config }: Props) {
           <div ref={containerRef} />
           {tooltip && (
             <div
-              className="fixed pointer-events-none bg-black/90 text-white px-3 py-2 rounded text-sm whitespace-pre-line z-50"
+              className="fixed pointer-events-none bg-black/95 text-white px-3 py-2 rounded-md shadow-lg text-xs font-mono whitespace-pre-line z-50 max-w-md border border-white/20"
               style={{
                 left: tooltip.x + 10,
                 top: tooltip.y - 50

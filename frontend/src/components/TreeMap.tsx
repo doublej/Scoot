@@ -26,7 +26,12 @@ export function TreeMap({ data, config }: Props) {
       .attr('height', height)
 
     const hierarchy = d3.hierarchy(data)
-      .sum(d => d.is_directory ? 0 : d.size)
+      .sum(d => {
+        if (d.is_directory) {
+          return d.at_depth_limit ? d.size : 0
+        }
+        return d.size
+      })
       .sort((a, b) => (b.value || 0) - (a.value || 0))
 
     const treemap = d3.treemap()
