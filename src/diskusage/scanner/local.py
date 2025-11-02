@@ -8,6 +8,7 @@ from typing import Optional
 
 from .base import DirInfo, FileInfo, ProgressCallback, ScanJob
 from .filters import ExclusionRules
+from diskusage.config.settings import get_config
 
 
 class LocalScanJob(ScanJob):
@@ -20,10 +21,13 @@ class LocalScanJob(ScanJob):
         progress: Optional[ProgressCallback] = None,
         exclusions: Optional[ExclusionRules] = None,
         max_depth: Optional[int] = None,
+        min_file_size: Optional[int] = None,
     ) -> None:
         super().__init__(follow_symlinks=follow_symlinks, progress=progress)
         self.exclusions = exclusions or ExclusionRules()
         self.max_depth = max_depth
+        config = get_config()
+        self.min_file_size = min_file_size if min_file_size is not None else config.min_file_size
 
     def scan(self, root_path: Path) -> DirInfo:
         path = Path(root_path).expanduser()
@@ -71,6 +75,10 @@ class LocalScanJob(ScanJob):
                         self._walk(child, depth=depth + 1)
                     child.update_aggregates()
                 else:
+                    # Skip files below minimum size threshold
+                    if stat_result.st_size < self.min_file_size:
+                        continue
+
                     child = FileInfo(
                         path=entry_path,
                         size=stat_result.st_size,

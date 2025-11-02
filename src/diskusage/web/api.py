@@ -119,3 +119,15 @@ async def remove_cache_entry(path: str):
     target = Path(path).expanduser()
     removed = cache.remove(target)
     return {"removed": removed}
+
+
+class FilterUpdate(BaseModel):
+    min_file_size: int
+
+
+@app.post("/api/config/filter")
+async def update_filter(update: FilterUpdate):
+    """Update filter configuration temporarily."""
+    # Note: This updates the runtime config, not the file
+    config._data.setdefault('filters', {})['min_file_size'] = update.min_file_size
+    return {"min_file_size": update.min_file_size}

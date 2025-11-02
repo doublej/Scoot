@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { ScanProgress } from './components/ScanProgress'
 import { FilterSettings } from './components/FilterSettings'
+import { SizeFilter } from './components/SizeFilter'
 import { TreeMapWebGL } from './components/TreeMapWebGL'
 import { ExtensionLegend } from './components/ExtensionLegend'
 import { ExtensionStats } from './components/ExtensionStats'
@@ -15,6 +16,15 @@ export default function App() {
   const [path, setPath] = useState('/Users/jurrejan/Documents/development/python/disk-usage-macos/codex')
   const [config, setConfig] = useState<any>(null)
   const { scanning, progress, tree, error, fromCache, startScan, cancelScan } = useScanWebSocket()
+
+  const handleSizeFilterChange = async (minSizeBytes: number) => {
+    // Update backend config
+    await fetch('/api/config/filter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ min_file_size: minSizeBytes })
+    })
+  }
 
   useEffect(() => {
     // Load configuration
@@ -79,6 +89,9 @@ export default function App() {
 
           {/* Filter Settings */}
           {config && <FilterSettings config={config} />}
+
+          {/* Size Filter */}
+          <SizeFilter onFilterChange={handleSizeFilterChange} />
 
           {/* Results */}
           {tree && !scanning && (

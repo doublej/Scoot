@@ -94,17 +94,33 @@ export function TreeMapWebGL({ data, config }: Props) {
 
     treemap(hierarchy)
 
-    console.log('Treemap hierarchy leaves:', hierarchy.leaves().length)
+    const leaves = hierarchy.leaves()
+    console.log('Treemap hierarchy leaves:', leaves.length)
 
-    // Find max depth for normalization
-    const maxDepth = Math.max(...hierarchy.leaves().map((n: any) => n.depth))
+    // Find max depth for normalization (avoid stack overflow with large arrays)
+    let maxDepth = 0
+    for (const node of leaves) {
+      if (node.depth > maxDepth) {
+        maxDepth = node.depth
+      }
+    }
 
     // Create meshes for each node
     const meshes: THREE.Mesh[] = []
     const raycaster = new THREE.Raycaster()
     const mouse = new THREE.Vector2()
 
-    hierarchy.leaves().forEach((node: any) => {
+    // Limit rendering for very large trees to prevent browser freeze
+    const maxNodesToRender = 50000
+    const nodesToRender = leaves.length > maxNodesToRender
+      ? leaves.slice(0, maxNodesToRender)
+      : leaves
+
+    if (leaves.length > maxNodesToRender) {
+      console.warn(`Rendering limited to ${maxNodesToRender} of ${leaves.length} nodes for performance`)
+    }
+
+    nodesToRender.forEach((node: any) => {
       const w = node.x1 - node.x0
       const h = node.y1 - node.y0
 

@@ -24,6 +24,10 @@ filters:
   # Cross filesystem boundaries
   cross_filesystems: false
 
+  # Minimum file size (bytes) - files smaller than this are excluded
+  # 0 = no filter, 1024 = 1 KB, 1048576 = 1 MB
+  min_file_size: 0
+
 # Extension Templates
 extension_templates:
   # Code files

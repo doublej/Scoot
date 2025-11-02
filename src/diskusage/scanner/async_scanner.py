@@ -25,6 +25,7 @@ class AsyncScanJob(ScanJob):
         self.exclude_patterns = exclude_patterns or config.exclude_patterns
         self.exclude_hidden = config.exclude_hidden
         self.cross_filesystems = config.cross_filesystems
+        self.min_file_size = config.min_file_size
         self.progress_interval = config.progress_update_interval
         self.max_depth = config.max_depth
 
@@ -75,6 +76,10 @@ class AsyncScanJob(ScanJob):
                     stat_info = entry.stat(follow_symlinks=False)
 
                     if entry.is_file(follow_symlinks=False):
+                        # Skip files below minimum size threshold
+                        if stat_info.st_size < self.min_file_size:
+                            continue
+
                         file_info = FileInfo(
                             path=Path(entry.path),
                             size=stat_info.st_size,

@@ -56,6 +56,11 @@ class Config:
         return self.get('filters.cross_filesystems', False)
 
     @property
+    def min_file_size(self) -> int:
+        """Minimum file size in bytes."""
+        return self.get('filters.min_file_size', 0)
+
+    @property
     def extension_templates(self) -> Dict[str, Dict]:
         """Get extension templates."""
         return self.get('extension_templates', {})
