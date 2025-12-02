@@ -95,7 +95,7 @@ class Config:
     @property
     def progress_update_interval(self) -> int:
         """Files between progress updates."""
-        return self.get('performance.progress_update_interval', 100)
+        return self.get('performance.progress_update_interval', 25)
 
     @property
     def max_depth(self) -> int:
