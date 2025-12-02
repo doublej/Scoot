@@ -44,8 +44,8 @@
 
   html {
     font-family: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
-    font-size: 13px;
-    line-height: 1.5;
+    font-size: 14px;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     letter-spacing: -0.01em;
   }
@@ -77,18 +77,23 @@
 
   /* Data cell */
   .data-cell {
-    @apply border border-border p-3;
+    @apply border border-border p-4;
     font-variant-numeric: tabular-nums;
+    transition: background-color 150ms ease;
+  }
+
+  .data-cell:hover {
+    @apply bg-secondary/50;
   }
 
   /* Label style */
   .label {
-    @apply text-[10px] uppercase tracking-[0.1em] text-muted-foreground;
+    @apply text-[11px] uppercase tracking-[0.1em] text-muted-foreground mb-1;
   }
 
   /* Value style */
   .value {
-    @apply text-base font-medium;
+    @apply text-lg font-semibold;
   }
 
   /* Status indicator */
@@ -107,7 +112,16 @@
 
   /* Interactive row */
   .row-interactive {
-    @apply transition-colors hover:bg-secondary/50;
+    @apply transition-all duration-150 cursor-pointer;
+  }
+
+  .row-interactive:hover {
+    @apply bg-secondary;
+    transform: translateX(2px);
+  }
+
+  .row-interactive:active {
+    @apply bg-primary/10;
   }
 
   /* Keyboard style */
@@ -136,10 +150,27 @@ input, button, select, textarea {
   box-shadow: none !important;
 }
 
+button {
+  transition: all 150ms ease;
+}
+
+button:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
 input:focus, button:focus, select:focus, textarea:focus {
   outline: 2px solid hsl(24, 100%, 50%);
   outline-offset: -2px;
   box-shadow: none !important;
+}
+
+input:hover:not(:focus):not(:disabled) {
+  border-color: hsl(0 0% 65%);
 }
 
 /* Scrollbar - minimal */
@@ -161,13 +192,11 @@ input:focus, button:focus, select:focus, textarea:focus {
 }
 
 /* Scan progress animation */
-@keyframes scan-pulse {
-  0%, 100% {
-    opacity: 0.4;
+@keyframes scan-slide {
+  0% {
     transform: translateX(-100%);
   }
-  50% {
-    opacity: 1;
-    transform: translateX(0);
+  100% {
+    transform: translateX(200%);
   }
 }

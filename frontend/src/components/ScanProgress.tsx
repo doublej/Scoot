@@ -32,27 +32,27 @@ export function ScanProgress({ progress, startTime }: Props) {
 
   if (!progress) {
     return (
-      <div className="py-4">
-        <div className="flex items-center gap-3">
-          <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-          <span className="text-muted-foreground">Connecting...</span>
-          {startTime && <span className="text-xs text-muted-foreground ml-auto">{formatElapsed(elapsed)}</span>}
+      <div className="py-5">
+        <div className="flex items-center gap-4 px-1">
+          <div className="w-3 h-3 bg-primary animate-pulse" />
+          <span className="text-sm text-muted-foreground font-medium">Connecting...</span>
+          {startTime && <span className="text-sm text-muted-foreground ml-auto">{formatElapsed(elapsed)}</span>}
         </div>
       </div>
     )
   }
 
   return (
-    <div className="py-4 space-y-4">
+    <div className="py-5 space-y-5">
       {/* Current path - prominent */}
-      <div className="flex items-center gap-3">
-        <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-        <code className="text-sm flex-1 truncate">{progress.current_path}</code>
-        <span className="text-xs text-muted-foreground whitespace-nowrap">{formatElapsed(elapsed)}</span>
+      <div className="flex items-center gap-4 px-1">
+        <div className="w-3 h-3 bg-primary animate-pulse" />
+        <code className="text-sm flex-1 truncate font-medium">{progress.current_path}</code>
+        <span className="text-sm text-muted-foreground whitespace-nowrap font-medium">{formatElapsed(elapsed)}</span>
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-5 gap-3">
         <div className="data-cell">
           <div className="label">FILES</div>
           <div className="value text-tabular">{progress.files.toLocaleString()}</div>
@@ -76,12 +76,12 @@ export function ScanProgress({ progress, startTime }: Props) {
       </div>
 
       {/* Animated progress bar */}
-      <div className="h-1 bg-secondary rounded-full overflow-hidden">
+      <div className="h-1.5 bg-secondary overflow-hidden">
         <div
-          className="h-full bg-primary rounded-full transition-all duration-300"
+          className="h-full bg-primary"
           style={{
-            width: '100%',
-            animation: 'scan-pulse 1.5s ease-in-out infinite'
+            width: '40%',
+            animation: 'scan-slide 1s linear infinite'
           }}
         />
       </div>
