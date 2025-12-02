@@ -12,7 +12,6 @@ from diskusage.scanner.local import LocalScanJob
 from diskusage.web.websocket import handle_scan_progress
 from diskusage.config.settings import get_config
 from diskusage.cache.store import get_cache
-from diskusage.web.scan_manager import get_scan_manager
 
 
 class ScanRequest(BaseModel):
@@ -80,16 +79,6 @@ def serialize_node(node) -> Dict:
 async def websocket_scan(websocket: WebSocket, path: str):
     """WebSocket endpoint for real-time scan progress."""
     await handle_scan_progress(websocket, path)
-
-
-@app.get("/api/scan/status")
-async def scan_status(path: str = None):
-    """Get scan status for a path or all active scans."""
-    manager = get_scan_manager()
-    if path:
-        target = Path(path).expanduser()
-        return manager.get_status(str(target))
-    return {"active_scans": manager.get_all_active()}
 
 
 @app.get("/api/config")

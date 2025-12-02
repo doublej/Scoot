@@ -20,7 +20,7 @@ export default function App() {
   const [config, setConfig] = useState<any>(null)
   const [statusChecked, setStatusChecked] = useState(false)
   const [activeTab, setActiveTab] = useState<'map' | 'list' | 'config'>('map')
-  const { scanning, progress, tree, error, fromCache, startScan, cancelScan, checkStatus, scanStartTime } = useScanWebSocket()
+  const { scanning, progress, tree, error, fromCache, startScan, cancelScan, restoreLastScan, scanStartTime } = useScanWebSocket()
 
   const handleSizeFilterChange = async (minSizeBytes: number) => {
     await fetch('http://localhost:8924/api/config/filter', {
@@ -48,27 +48,28 @@ export default function App() {
 
   useEffect(() => {
     if (!statusChecked && path) {
-      checkStatus(path).then(() => setStatusChecked(true))
+      restoreLastScan(path)
+      setStatusChecked(true)
     }
-  }, [path, statusChecked, checkStatus])
+  }, [path, statusChecked, restoreLastScan])
 
   return (
     <div className="min-h-screen grid-bg">
       {/* Header */}
       <header className="border-b-2 border-foreground bg-background">
         <div className="container mx-auto">
-          <div className="flex items-center justify-between py-3">
-            <div className="flex items-center gap-6">
-              <h1 className="text-lg font-medium">diskusage</h1>
-              <nav className="flex border-l border-border">
+          <div className="flex items-center justify-between py-4">
+            <div className="flex items-center gap-8">
+              <h1 className="text-xl font-semibold tracking-tight">diskusage</h1>
+              <nav className="flex border-l-2 border-foreground">
                 {(['map', 'list', 'config'] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`px-4 py-2 text-sm border-r border-border transition-colors ${
+                    className={`px-5 py-2.5 text-sm font-medium border-r border-border transition-all ${
                       activeTab === tab
                         ? 'bg-primary text-primary-foreground'
-                        : 'hover:bg-secondary'
+                        : 'hover:bg-secondary/80'
                     }`}
                   >
                     {tab.toUpperCase()}
@@ -76,9 +77,9 @@ export default function App() {
                 ))}
               </nav>
             </div>
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              {fromCache && tree && <span className="text-primary">[CACHED]</span>}
-              {scanning && <span className="text-primary animate-pulse">[SCANNING]</span>}
+            <div className="flex items-center gap-4 text-sm">
+              {fromCache && tree && <span className="text-primary font-medium">[CACHED]</span>}
+              {scanning && <span className="text-primary font-medium animate-pulse">[SCANNING]</span>}
             </div>
           </div>
         </div>
@@ -86,10 +87,10 @@ export default function App() {
 
       {/* Input Bar */}
       <div className="border-b border-border bg-card">
-        <div className="container mx-auto py-3">
-          <div className="flex gap-2">
-            <div className="flex-1 flex border border-border">
-              <span className="px-3 py-2 bg-secondary text-muted-foreground text-xs border-r border-border">
+        <div className="container mx-auto py-4">
+          <div className="flex gap-3">
+            <div className="flex-1 flex border-2 border-border">
+              <span className="px-4 py-3 bg-secondary text-muted-foreground text-xs font-medium border-r-2 border-border flex items-center">
                 PATH
               </span>
               <Input
@@ -97,17 +98,17 @@ export default function App() {
                 value={path}
                 onChange={(e) => setPath(e.target.value)}
                 placeholder="/path/to/directory"
-                className="flex-1 border-0 h-auto py-2"
+                className="flex-1 border-0 h-auto py-3 px-4 text-sm"
                 disabled={scanning}
               />
             </div>
             {scanning ? (
-              <Button onClick={cancelScan} variant="destructive" className="px-6">
+              <Button onClick={cancelScan} variant="destructive" className="px-8 py-3 h-auto font-medium">
                 <X className="w-4 h-4 mr-2" />
                 STOP
               </Button>
             ) : (
-              <Button onClick={() => startScan(path)} className="px-6 bg-primary text-primary-foreground">
+              <Button onClick={() => startScan(path)} className="px-8 py-3 h-auto bg-primary text-primary-foreground font-medium">
                 SCAN
               </Button>
             )}
@@ -137,22 +138,23 @@ export default function App() {
       )}
 
       {/* Main Content */}
-      <main className="container mx-auto py-6">
+      <main className="container mx-auto py-8">
         {activeTab === 'map' && (
           <>
             {tree && !scanning ? (
-              <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
                 <div className="xl:col-span-3">
                   <TreeMapWebGL data={tree} config={config} />
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <ExtensionStats tree={tree} />
                   <ExtensionLegend config={config} tree={tree} />
                 </div>
               </div>
             ) : (
-              <div className="border border-border p-12 text-center text-muted-foreground">
-                Enter path and click SCAN to analyze disk usage
+              <div className="border-2 border-border p-16 text-center text-muted-foreground">
+                <p className="text-lg mb-2">No scan data</p>
+                <p className="text-sm">Enter path and click SCAN to analyze disk usage</p>
               </div>
             )}
           </>
@@ -163,28 +165,29 @@ export default function App() {
             {tree && !scanning ? (
               <ListView tree={tree} />
             ) : (
-              <div className="border border-border p-12 text-center text-muted-foreground">
-                No data. Run a scan first.
+              <div className="border-2 border-border p-16 text-center text-muted-foreground">
+                <p className="text-lg mb-2">No scan data</p>
+                <p className="text-sm">Run a scan first to see the file list</p>
               </div>
             )}
           </>
         )}
 
         {activeTab === 'config' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-border pb-3">
-              <span className="label">CONFIGURATION</span>
-              <Button onClick={clearCache} variant="outline" size="sm" className="text-xs">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between border-b-2 border-border pb-4">
+              <span className="text-sm font-medium uppercase tracking-wider">Configuration</span>
+              <Button onClick={clearCache} variant="outline" size="sm" className="text-xs font-medium px-4">
                 CLEAR CACHE
               </Button>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {config && <DepthLimitControl config={config} onUpdate={loadConfig} />}
               {config && <FilterSettings config={config} onUpdate={loadConfig} />}
               {config && <ExtensionCategories config={config} onUpdate={loadConfig} />}
               <SizeFilter onFilterChange={handleSizeFilterChange} />
             </div>
-            <p className="text-xs text-muted-foreground border-t border-border pt-3">
+            <p className="text-sm text-muted-foreground border-t-2 border-border pt-4">
               Settings apply on next scan. Clear cache to rescan.
             </p>
           </div>

@@ -34,7 +34,6 @@ export function useScanWebSocket() {
   const [tree, setTree] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
   const [fromCache, setFromCache] = useState(false)
-  const [sessionId, setSessionId] = useState<string | null>(null)
   const [scanStartTime, setScanStartTime] = useState<number | null>(null)
   const wsRef = useRef<WebSocket | null>(null)
 
@@ -43,40 +42,17 @@ export function useScanWebSocket() {
       wsRef.current.close()
       wsRef.current = null
       setScanning(false)
-      setSessionId(null)
       setError('Scan cancelled')
     }
   }, [])
 
-  const checkStatus = useCallback(async (path: string): Promise<boolean> => {
-    const response = await fetch(
-      `http://localhost:8924/api/scan/status?path=${encodeURIComponent(path)}`
-    )
-    const status = await response.json()
-
-    if (status.active) {
-      // Active scan in progress - show progress
-      setScanning(true)
-      setSessionId(status.session_id)
-      setProgress(status.progress)
-      return true
-    }
-
-    if (status.completed && status.result) {
-      // Completed scan available - load result
-      setTree(status.result.tree)
-      setFromCache(true)
-      return true
-    }
-
-    // Check localStorage for previous result
+  const restoreLastScan = useCallback((path: string): boolean => {
     const stored = loadFromStorage()
     if (stored && stored.path === path) {
       setTree(stored.tree)
       setFromCache(true)
       return true
     }
-
     return false
   }, [])
 
@@ -86,7 +62,6 @@ export function useScanWebSocket() {
     setTree(null)
     setError(null)
     setFromCache(false)
-    setSessionId(null)
     setScanStartTime(Date.now())
 
     const ws = new WebSocket(`ws://localhost:8924/ws/scan?path=${encodeURIComponent(path)}`)
@@ -97,8 +72,6 @@ export function useScanWebSocket() {
 
       switch (data.type) {
         case 'started':
-          console.log('Scan started:', data.path, 'session:', data.session_id)
-          setSessionId(data.session_id)
           break
 
         case 'progress':
@@ -118,7 +91,6 @@ export function useScanWebSocket() {
           setTree(data.tree)
           setFromCache(data.from_cache || false)
           setScanning(false)
-          setSessionId(null)
           // Save to localStorage for recovery after refresh
           if (!data.from_cache) {
             saveToStorage({
@@ -134,7 +106,6 @@ export function useScanWebSocket() {
         case 'error':
           setError(data.message)
           setScanning(false)
-          setSessionId(null)
           ws.close()
           break
       }
@@ -143,7 +114,6 @@ export function useScanWebSocket() {
     ws.onerror = () => {
       setError('WebSocket connection error')
       setScanning(false)
-      setSessionId(null)
     }
 
     ws.onclose = () => {
@@ -151,5 +121,5 @@ export function useScanWebSocket() {
     }
   }, [])
 
-  return { scanning, progress, tree, error, fromCache, startScan, cancelScan, checkStatus, sessionId, scanStartTime }
+  return { scanning, progress, tree, error, fromCache, startScan, cancelScan, restoreLastScan, scanStartTime }
 }
