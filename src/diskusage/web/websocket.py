@@ -39,8 +39,8 @@ async def handle_scan_progress(websocket: WebSocket, path: str) -> None:
                 total_size, str(node.path)
             )
 
-        # Send update every 100 files
-        if files_processed % 100 == 0:
+        # Send update every 50 files for responsive feedback
+        if files_processed % 50 == 0:
             asyncio.create_task(websocket.send_json({
                 "type": "progress",
                 "files": files_processed,
@@ -108,6 +108,15 @@ async def handle_scan_progress(websocket: WebSocket, path: str) -> None:
             "type": "started",
             "path": str(target),
             "session_id": session_id
+        })
+
+        # Send initial progress immediately so UI shows scanning state
+        await websocket.send_json({
+            "type": "progress",
+            "files": 0,
+            "directories": 0,
+            "total_size": 0,
+            "current_path": str(target)
         })
 
         scanner = AsyncScanJob(progress_callback=progress_callback)
