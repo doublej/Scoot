@@ -1,91 +1,90 @@
+import { useState, useEffect } from 'react'
 import { ScanProgress as ScanProgressType } from '../hooks/useScanWebSocket'
 import { formatBytes } from '../lib/utils'
-import { Files, FolderOpen, HardDrive, Radio } from 'lucide-react'
 
 interface Props {
   progress: ScanProgressType | null
+  startTime: number | null
 }
 
-export function ScanProgress({ progress }: Props) {
+function formatElapsed(ms: number): string {
+  const seconds = Math.floor(ms / 1000)
+  const minutes = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  if (minutes > 0) {
+    return `${minutes}m ${secs}s`
+  }
+  return `${secs}s`
+}
+
+export function ScanProgress({ progress, startTime }: Props) {
+  const [elapsed, setElapsed] = useState(0)
+
+  useEffect(() => {
+    if (!startTime) return
+    const interval = setInterval(() => {
+      setElapsed(Date.now() - startTime)
+    }, 100)
+    return () => clearInterval(interval)
+  }, [startTime])
+
+  const filesPerSec = elapsed > 0 ? Math.round((progress?.files || 0) / (elapsed / 1000)) : 0
+
   if (!progress) {
     return (
-      <div className="glass-panel rounded-xl p-6 glow-border scan-line">
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Radio className="w-5 h-5 text-primary animate-pulse" />
-            </div>
-            <div className="absolute inset-0 rounded-xl pulse-ring" />
-          </div>
-          <div>
-            <span className="text-sm font-medium">Initializing scan...</span>
-            <p className="text-xs text-muted-foreground mt-0.5">Preparing file system traversal</p>
-          </div>
+      <div className="py-4">
+        <div className="flex items-center gap-3">
+          <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+          <span className="text-muted-foreground">Connecting...</span>
+          {startTime && <span className="text-xs text-muted-foreground ml-auto">{formatElapsed(elapsed)}</span>}
         </div>
       </div>
     )
   }
 
   return (
-    <div className="glass-panel rounded-xl overflow-hidden glow-border">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-border/50">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Radio className="w-4 h-4 text-primary" />
-              </div>
-              <div className="absolute inset-0 rounded-lg pulse-ring" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-primary">Scanning in progress</h3>
-              <p className="text-xs text-muted-foreground font-mono truncate max-w-[300px] sm:max-w-[500px]">
-                {progress.current_path}
-              </p>
-            </div>
-          </div>
+    <div className="py-4 space-y-4">
+      {/* Current path - prominent */}
+      <div className="flex items-center gap-3">
+        <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+        <code className="text-sm flex-1 truncate">{progress.current_path}</code>
+        <span className="text-xs text-muted-foreground whitespace-nowrap">{formatElapsed(elapsed)}</span>
+      </div>
+
+      {/* Stats grid */}
+      <div className="grid grid-cols-5 gap-4">
+        <div className="data-cell">
+          <div className="label">FILES</div>
+          <div className="value text-tabular">{progress.files.toLocaleString()}</div>
+        </div>
+        <div className="data-cell">
+          <div className="label">DIRS</div>
+          <div className="value text-tabular">{progress.directories.toLocaleString()}</div>
+        </div>
+        <div className="data-cell">
+          <div className="label">SIZE</div>
+          <div className="value text-tabular">{formatBytes(progress.total_size)}</div>
+        </div>
+        <div className="data-cell">
+          <div className="label">RATE</div>
+          <div className="value text-tabular">{filesPerSec.toLocaleString()}/s</div>
+        </div>
+        <div className="data-cell">
+          <div className="label">ELAPSED</div>
+          <div className="value text-tabular">{formatElapsed(elapsed)}</div>
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="p-6">
-        <div className="grid grid-cols-3 gap-6">
-          <StatBlock
-            icon={<Files className="w-4 h-4" />}
-            label="Files"
-            value={progress.files.toLocaleString()}
-          />
-          <StatBlock
-            icon={<FolderOpen className="w-4 h-4" />}
-            label="Directories"
-            value={progress.directories.toLocaleString()}
-          />
-          <StatBlock
-            icon={<HardDrive className="w-4 h-4" />}
-            label="Total Size"
-            value={formatBytes(progress.total_size)}
-          />
-        </div>
+      {/* Animated progress bar */}
+      <div className="h-1 bg-secondary rounded-full overflow-hidden">
+        <div
+          className="h-full bg-primary rounded-full transition-all duration-300"
+          style={{
+            width: '100%',
+            animation: 'scan-pulse 1.5s ease-in-out infinite'
+          }}
+        />
       </div>
-
-      {/* Progress Bar */}
-      <div className="h-1 bg-secondary/50 scan-line">
-        <div className="h-full bg-gradient-to-r from-primary via-primary to-accent w-full animate-data-stream"
-             style={{ backgroundSize: '200% 100%' }} />
-      </div>
-    </div>
-  )
-}
-
-function StatBlock({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2 text-muted-foreground">
-        {icon}
-        <span className="text-xs font-medium uppercase tracking-wider">{label}</span>
-      </div>
-      <div className="text-2xl font-semibold data-readout text-glow-subtle">{value}</div>
     </div>
   )
 }

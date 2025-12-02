@@ -35,6 +35,7 @@ export function useScanWebSocket() {
   const [error, setError] = useState<string | null>(null)
   const [fromCache, setFromCache] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
+  const [scanStartTime, setScanStartTime] = useState<number | null>(null)
   const wsRef = useRef<WebSocket | null>(null)
 
   const cancelScan = useCallback(() => {
@@ -86,6 +87,7 @@ export function useScanWebSocket() {
     setError(null)
     setFromCache(false)
     setSessionId(null)
+    setScanStartTime(Date.now())
 
     const ws = new WebSocket(`ws://localhost:8924/ws/scan?path=${encodeURIComponent(path)}`)
     wsRef.current = ws
@@ -149,5 +151,5 @@ export function useScanWebSocket() {
     }
   }, [])
 
-  return { scanning, progress, tree, error, fromCache, startScan, cancelScan, checkStatus, sessionId }
+  return { scanning, progress, tree, error, fromCache, startScan, cancelScan, checkStatus, sessionId, scanStartTime }
 }

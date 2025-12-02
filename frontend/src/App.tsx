@@ -20,7 +20,7 @@ export default function App() {
   const [config, setConfig] = useState<any>(null)
   const [statusChecked, setStatusChecked] = useState(false)
   const [activeTab, setActiveTab] = useState<'map' | 'list' | 'config'>('map')
-  const { scanning, progress, tree, error, fromCache, startScan, cancelScan, checkStatus } = useScanWebSocket()
+  const { scanning, progress, tree, error, fromCache, startScan, cancelScan, checkStatus, scanStartTime } = useScanWebSocket()
 
   const handleSizeFilterChange = async (minSizeBytes: number) => {
     await fetch('http://localhost:8924/api/config/filter', {
@@ -119,7 +119,7 @@ export default function App() {
       {scanning && (
         <div className="border-b border-border">
           <div className="container mx-auto">
-            <ScanProgress progress={progress} />
+            <ScanProgress progress={progress} startTime={scanStartTime} />
           </div>
         </div>
       )}
