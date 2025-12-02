@@ -1,6 +1,5 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
-import { BarChart3 } from 'lucide-react'
 import { formatBytes } from '../lib/utils'
+import { Activity, Files, FolderTree, Layers, TrendingUp } from 'lucide-react'
 
 interface Props {
   tree: any
@@ -33,40 +32,66 @@ export function ExtensionStats({ tree }: Props) {
   const avgFileSize = totalFiles > 0 ? totalSize / totalFiles : 0
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5" />
-          Statistics
-        </CardTitle>
-        <CardDescription>
-          Overview of scanned directory
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          <div className="flex justify-between">
-            <span className="text-sm text-muted-foreground">Total Size</span>
-            <span className="font-mono font-medium">{formatBytes(totalSize)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-sm text-muted-foreground">Files</span>
-            <span className="font-mono font-medium">{totalFiles.toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-sm text-muted-foreground">Directories</span>
-            <span className="font-mono font-medium">{totalDirs.toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-sm text-muted-foreground">Max Depth</span>
-            <span className="font-mono font-medium">{maxDepth}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-sm text-muted-foreground">Avg File Size</span>
-            <span className="font-mono font-medium">{formatBytes(avgFileSize)}</span>
-          </div>
+    <div className="glass-panel rounded-xl overflow-hidden">
+      <div className="px-5 py-4 border-b border-border/50">
+        <div className="flex items-center gap-2">
+          <Activity className="w-4 h-4 text-primary" />
+          <h3 className="text-sm font-semibold">Statistics</h3>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      <div className="p-5 space-y-4">
+        <StatRow
+          icon={<Layers className="w-3.5 h-3.5" />}
+          label="Total Size"
+          value={formatBytes(totalSize)}
+          highlight
+        />
+        <StatRow
+          icon={<Files className="w-3.5 h-3.5" />}
+          label="Files"
+          value={totalFiles.toLocaleString()}
+        />
+        <StatRow
+          icon={<FolderTree className="w-3.5 h-3.5" />}
+          label="Directories"
+          value={totalDirs.toLocaleString()}
+        />
+        <StatRow
+          icon={<TrendingUp className="w-3.5 h-3.5" />}
+          label="Max Depth"
+          value={maxDepth.toString()}
+        />
+        <StatRow
+          icon={<Activity className="w-3.5 h-3.5" />}
+          label="Avg File Size"
+          value={formatBytes(avgFileSize)}
+        />
+      </div>
+    </div>
+  )
+}
+
+function StatRow({
+  icon,
+  label,
+  value,
+  highlight = false
+}: {
+  icon: React.ReactNode
+  label: string
+  value: string
+  highlight?: boolean
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center gap-2 text-muted-foreground">
+        {icon}
+        <span className="text-xs">{label}</span>
+      </div>
+      <span className={`font-mono text-sm font-medium ${highlight ? 'text-primary text-glow-subtle' : ''}`}>
+        {value}
+      </span>
+    </div>
   )
 }

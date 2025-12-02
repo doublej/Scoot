@@ -87,7 +87,9 @@ async def get_configuration():
     return {
         "filters": {
             "exclude_patterns": config.exclude_patterns,
-            "exclude_hidden": config.exclude_hidden
+            "exclude_hidden": config.exclude_hidden,
+            "min_file_size": config.min_file_size,
+            "max_depth": config.max_scan_depth
         },
         "extension_templates": config.extension_templates,
         "special_folders": config.special_folders
@@ -123,6 +125,10 @@ async def remove_cache_entry(path: str):
 
 class FilterUpdate(BaseModel):
     min_file_size: int
+
+
+class DepthLimitUpdate(BaseModel):
+    max_depth: int
 
 
 class ExcludePatternsUpdate(BaseModel):
@@ -179,6 +185,17 @@ async def delete_extension_category(category_name: str):
         config.save()
         return {"deleted": category_name}
     raise HTTPException(status_code=404, detail="Category not found")
+
+
+@app.post("/api/config/depth-limit")
+async def update_depth_limit(update: DepthLimitUpdate):
+    """Update maximum scan depth."""
+    print(f"[CONFIG UPDATE] Setting max_depth to {update.max_depth}")
+    config.set('filters.max_depth', update.max_depth)
+    config.save()
+    config.load()
+    print(f"[CONFIG UPDATE] Saved and reloaded. Current max_scan_depth: {config.max_scan_depth}")
+    return {"max_depth": config.max_scan_depth}
 
 
 @app.post("/api/config/reload")

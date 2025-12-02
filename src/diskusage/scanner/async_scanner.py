@@ -27,7 +27,7 @@ class AsyncScanJob(ScanJob):
         self.cross_filesystems = config.cross_filesystems
         self.min_file_size = config.min_file_size
         self.progress_interval = config.progress_update_interval
-        self.max_depth = config.max_depth
+        self.max_depth = config.max_scan_depth
 
     def scan(self, root_path: Path) -> DirInfo:
         """Synchronous wrapper for async scan."""
@@ -54,7 +54,7 @@ class AsyncScanJob(ScanJob):
 
     async def _scan_recursive(self, dir_info: DirInfo, depth: int) -> None:
         """Recursively scan directory contents."""
-        if self._cancelled or depth > self.max_depth:
+        if self._cancelled:
             return
 
         try:
@@ -110,7 +110,13 @@ class AsyncScanJob(ScanJob):
                         )
                         dir_info.add_child(child_dir)
 
-                        await self._scan_recursive(child_dir, depth + 1)
+                        # Only recurse if the next level won't exceed depth limit
+                        if self.max_depth == 0 or (depth + 1) < self.max_depth:
+                            await self._scan_recursive(child_dir, depth + 1)
+                        else:
+                            # At depth limit: mark and calculate total size without recursing
+                            child_dir.at_depth_limit = True
+                            child_dir.size = await self._calculate_dir_size(child_dir.path)
 
                 except (PermissionError, OSError):
                     # Skip inaccessible files/directories
@@ -119,6 +125,28 @@ class AsyncScanJob(ScanJob):
         except (PermissionError, OSError):
             # Skip inaccessible directories
             pass
+
+    async def _calculate_dir_size(self, dir_path: Path) -> int:
+        """Calculate total size of directory without detailed scanning."""
+        total_size = 0
+        try:
+            for entry in os.scandir(dir_path):
+                try:
+                    if entry.is_file(follow_symlinks=False):
+                        stat_info = entry.stat(follow_symlinks=False)
+                        if stat_info.st_size >= self.min_file_size:
+                            total_size += stat_info.st_size
+                    elif entry.is_dir(follow_symlinks=False):
+                        # Recursively sum subdirectories
+                        if not self._should_exclude(entry.name):
+                            if not self.exclude_hidden or not entry.name.startswith('.'):
+                                total_size += await self._calculate_dir_size(Path(entry.path))
+                except (PermissionError, OSError):
+                    continue
+        except (PermissionError, OSError):
+            pass
+
+        return total_size
 
     async def _send_progress(self, node: FileInfo) -> None:
         """Send progress update."""

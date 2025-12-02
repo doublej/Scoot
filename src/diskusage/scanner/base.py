@@ -52,7 +52,7 @@ class FileInfo:
 class DirInfo(FileInfo):
     """Directory node with child bookkeeping."""
 
-    __slots__ = ("children", "error", "file_count", "dir_count")
+    __slots__ = ("children", "error", "file_count", "dir_count", "at_depth_limit")
 
     def __init__(
         self,
@@ -67,6 +67,7 @@ class DirInfo(FileInfo):
         self.error: Optional[BaseException] = None
         self.file_count = 0
         self.dir_count = 0
+        self.at_depth_limit = False
 
     def add_child(self, child: FileInfo) -> None:
         child.parent = self

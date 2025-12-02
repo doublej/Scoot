@@ -1,243 +1,512 @@
-# Disk Usage Analyzer Configuration
-
-# Scan Filters (applied by default)
 filters:
-  # Exclude patterns (glob-style)
-  exclude_patterns:
-    - "node_modules"
-    - ".git"
-    - ".venv"
-    - "__pycache__"
-    - "*.pyc"
-    - ".DS_Store"
-    - ".pytest_cache"
-    - "venv"
-    - "env"
-    - ".tox"
-    - "dist"
-    - "build"
-    - "*.egg-info"
-
-  # Exclude hidden files/folders
+  exclude_patterns: []
   exclude_hidden: false
-
-  # Cross filesystem boundaries
   cross_filesystems: false
-
-  # Minimum file size (bytes) - files smaller than this are excluded
-  # 0 = no filter, 1024 = 1 KB, 1048576 = 1 MB
   min_file_size: 0
-
-# Extension Templates
+  max_depth: 2
+special_categories:
+  depth_limit:
+    color: '#fb923c'
+    description: Folders at scan depth limit (aggregate size shown)
+    icon: layers
 extension_templates:
-  # Code files
   code:
-    extensions: [".py", ".js", ".ts", ".jsx", ".tsx", ".java", ".cpp", ".c", ".h", ".rs", ".go", ".swift", ".kt", ".scala", ".rb", ".php", ".cs", ".vb", ".fs", ".clj", ".elm", ".erl", ".ex", ".exs", ".dart", ".lua", ".r"]
-    color: "#60a5fa"
-    description: "Source code and programming language files"
-    icon: "code"
-
-  # Documents
+    extensions:
+    - .py
+    - .js
+    - .ts
+    - .jsx
+    - .tsx
+    - .java
+    - .cpp
+    - .c
+    - .h
+    - .rs
+    - .go
+    - .swift
+    - .kt
+    - .scala
+    - .rb
+    - .php
+    - .cs
+    - .vb
+    - .fs
+    - .clj
+    - .elm
+    - .erl
+    - .ex
+    - .exs
+    - .dart
+    - .lua
+    - .r
+    color: '#60a5fa'
+    description: Source code and programming language files
+    icon: code
   documents:
-    extensions: [".pdf", ".doc", ".docx", ".txt", ".md", ".rtf", ".odt", ".pages", ".tex", ".latex", ".wps", ".wpd", ".log"]
-    color: "#f97316"
-    description: "Text documents and written content"
-    icon: "file-text"
-
-  # Images
+    extensions:
+    - .pdf
+    - .doc
+    - .docx
+    - .txt
+    - .md
+    - .rtf
+    - .odt
+    - .pages
+    - .tex
+    - .latex
+    - .wps
+    - .wpd
+    - .log
+    color: '#f97316'
+    description: Text documents and written content
+    icon: file-text
   images:
-    extensions: [".jpg", ".jpeg", ".png", ".gif", ".svg", ".webp", ".ico", ".bmp", ".tiff", ".tif", ".psd", ".ai", ".eps", ".raw", ".cr2", ".nef", ".orf", ".sr2", ".heic", ".heif", ".avif"]
-    color: "#a855f7"
-    description: "Image and graphic files"
-    icon: "image"
-
-  # Videos
+    extensions:
+    - .jpg
+    - .jpeg
+    - .png
+    - .gif
+    - .svg
+    - .webp
+    - .ico
+    - .bmp
+    - .tiff
+    - .tif
+    - .psd
+    - .ai
+    - .eps
+    - .raw
+    - .cr2
+    - .nef
+    - .orf
+    - .sr2
+    - .heic
+    - .heif
+    - .avif
+    color: '#a855f7'
+    description: Image and graphic files
+    icon: image
   videos:
-    extensions: [".mp4", ".avi", ".mov", ".mkv", ".webm", ".flv", ".wmv", ".m4v", ".mpg", ".mpeg", ".3gp", ".3g2", ".ogv", ".mxf", ".vob", ".ts", ".m2ts"]
-    color: "#ec4899"
-    description: "Video and movie files"
-    icon: "video"
-
-  # Audio
+    extensions:
+    - .mp4
+    - .avi
+    - .mov
+    - .mkv
+    - .webm
+    - .flv
+    - .wmv
+    - .m4v
+    - .mpg
+    - .mpeg
+    - .3gp
+    - .3g2
+    - .ogv
+    - .mxf
+    - .vob
+    - .ts
+    - .m2ts
+    color: '#ec4899'
+    description: Video and movie files
+    icon: video
   audio:
-    extensions: [".mp3", ".wav", ".flac", ".aac", ".ogg", ".m4a", ".wma", ".opus", ".ape", ".alac", ".mid", ".midi", ".aiff", ".au", ".amr", ".dsf", ".dsd"]
-    color: "#14b8a6"
-    description: "Audio and music files"
-    icon: "music"
-
-  # Archives
+    extensions:
+    - .mp3
+    - .wav
+    - .flac
+    - .aac
+    - .ogg
+    - .m4a
+    - .wma
+    - .opus
+    - .ape
+    - .alac
+    - .mid
+    - .midi
+    - .aiff
+    - .au
+    - .amr
+    - .dsf
+    - .dsd
+    color: '#14b8a6'
+    description: Audio and music files
+    icon: music
   archives:
-    extensions: [".zip", ".tar", ".gz", ".bz2", ".7z", ".rar", ".xz", ".tgz", ".tbz2", ".lz", ".lzma", ".z", ".cab", ".iso", ".jar", ".war", ".ear", ".deb", ".rpm", ".apk", ".dmg"]
-    color: "#eab308"
-    description: "Compressed archive files"
-    icon: "archive"
-
-  # Data
+    extensions:
+    - .zip
+    - .tar
+    - .gz
+    - .bz2
+    - .7z
+    - .rar
+    - .xz
+    - .tgz
+    - .tbz2
+    - .lz
+    - .lzma
+    - .z
+    - .cab
+    - .iso
+    - .jar
+    - .war
+    - .ear
+    - .deb
+    - .rpm
+    - .apk
+    - .dmg
+    color: '#eab308'
+    description: Compressed archive files
+    icon: archive
   data:
-    extensions: [".json", ".xml", ".yaml", ".yml", ".csv", ".sql", ".toml", ".ini", ".conf", ".config", ".parquet", ".avro", ".proto", ".thrift"]
-    color: "#10b981"
-    description: "Structured data and database files"
-    icon: "database"
-
-  # 3D Models & CAD
+    extensions:
+    - .json
+    - .xml
+    - .yaml
+    - .yml
+    - .csv
+    - .sql
+    - .toml
+    - .ini
+    - .conf
+    - .config
+    - .parquet
+    - .avro
+    - .proto
+    - .thrift
+    color: '#10b981'
+    description: Structured data and database files
+    icon: database
   models_3d:
-    extensions: [".obj", ".fbx", ".stl", ".dae", ".blend", ".3ds", ".max", ".c4d", ".ma", ".mb", ".gltf", ".glb", ".usd", ".usdz", ".ply", ".skp", ".dwg", ".dxf", ".step", ".stp", ".iges", ".igs", ".ifc", ".3mf", ".amf", ".x3d", ".wrl"]
-    color: "#6366f1"
-    description: "3D models, CAD drawings, and mesh files"
-    icon: "box"
-
-  # Fonts
+    extensions:
+    - .obj
+    - .fbx
+    - .stl
+    - .dae
+    - .blend
+    - .3ds
+    - .max
+    - .c4d
+    - .ma
+    - .mb
+    - .gltf
+    - .glb
+    - .usd
+    - .usdz
+    - .ply
+    - .skp
+    - .dwg
+    - .dxf
+    - .step
+    - .stp
+    - .iges
+    - .igs
+    - .ifc
+    - .3mf
+    - .amf
+    - .x3d
+    - .wrl
+    color: '#6366f1'
+    description: 3D models, CAD drawings, and mesh files
+    icon: box
   fonts:
-    extensions: [".ttf", ".otf", ".woff", ".woff2", ".eot", ".fon", ".fnt", ".dfont", ".suit", ".pfb", ".pfm", ".afm", ".bdf", ".pcf", ".snf", ".pfa", ".ttc", ".otc"]
-    color: "#84cc16"
-    description: "Font and typeface files"
-    icon: "type"
-
-  # Spreadsheets
+    extensions:
+    - .ttf
+    - .otf
+    - .woff
+    - .woff2
+    - .eot
+    - .fon
+    - .fnt
+    - .dfont
+    - .suit
+    - .pfb
+    - .pfm
+    - .afm
+    - .bdf
+    - .pcf
+    - .snf
+    - .pfa
+    - .ttc
+    - .otc
+    color: '#84cc16'
+    description: Font and typeface files
+    icon: type
   spreadsheets:
-    extensions: [".xlsx", ".xls", ".xlsm", ".xlsb", ".xltx", ".xltm", ".ods", ".numbers", ".gnumeric", ".tsv", ".tab", ".dif", ".sylk", ".slk", ".dbf"]
-    color: "#22c55e"
-    description: "Spreadsheet and tabular data files"
-    icon: "table"
-
-  # Presentations
+    extensions:
+    - .xlsx
+    - .xls
+    - .xlsm
+    - .xlsb
+    - .xltx
+    - .xltm
+    - .ods
+    - .numbers
+    - .gnumeric
+    - .tsv
+    - .tab
+    - .dif
+    - .sylk
+    - .slk
+    - .dbf
+    color: '#22c55e'
+    description: Spreadsheet and tabular data files
+    icon: table
   presentations:
-    extensions: [".pptx", ".ppt", ".pptm", ".potx", ".potm", ".ppsx", ".ppsm", ".odp", ".key", ".keynote", ".sldx", ".sldm", ".pps", ".pot"]
-    color: "#f59e0b"
-    description: "Presentation and slideshow files"
-    icon: "presentation"
-
-  # Build Artifacts & Binaries
+    extensions:
+    - .pptx
+    - .ppt
+    - .pptm
+    - .potx
+    - .potm
+    - .ppsx
+    - .ppsm
+    - .odp
+    - .key
+    - .keynote
+    - .sldx
+    - .sldm
+    - .pps
+    - .pot
+    color: '#f59e0b'
+    description: Presentation and slideshow files
+    icon: presentation
   binaries:
-    extensions: [".exe", ".dll", ".so", ".dylib", ".bin", ".app", ".ipa", ".msi", ".pkg", ".pyc", ".pyo", ".class", ".o", ".a", ".lib", ".wasm", ".node", ".bundle"]
-    color: "#64748b"
-    description: "Compiled binaries and build artifacts"
-    icon: "cpu"
-
-  # System & Log Files
+    extensions:
+    - .exe
+    - .dll
+    - .so
+    - .dylib
+    - .bin
+    - .app
+    - .ipa
+    - .msi
+    - .pkg
+    - .pyc
+    - .pyo
+    - .class
+    - .o
+    - .a
+    - .lib
+    - .wasm
+    - .node
+    - .bundle
+    color: '#64748b'
+    description: Compiled binaries and build artifacts
+    icon: cpu
   system_files:
-    extensions: [".log", ".tmp", ".temp", ".cache", ".bak", ".swp", ".swo", ".lock", ".pid", ".core", ".dump", ".dmp", ".crash", ".old", ".orig", ".save"]
-    color: "#ef4444"
-    description: "System files, logs, and temporary data"
-    icon: "alert-circle"
-
-  # Disk Images & Virtual Machines
+    extensions:
+    - .log
+    - .tmp
+    - .temp
+    - .cache
+    - .bak
+    - .swp
+    - .swo
+    - .lock
+    - .pid
+    - .core
+    - .dump
+    - .dmp
+    - .crash
+    - .old
+    - .orig
+    - .save
+    color: '#ef4444'
+    description: System files, logs, and temporary data
+    icon: alert-circle
   disk_images:
-    extensions: [".iso", ".img", ".vdi", ".vhd", ".vhdx", ".vmdk", ".qcow", ".qcow2", ".raw", ".mdf", ".mds", ".nrg", ".toast", ".vfd", ".vcd", ".ova", ".ovf"]
-    color: "#9333ea"
-    description: "Disk images and virtual machine files"
-    icon: "disc"
-
-  # eBooks & Publications
+    extensions:
+    - .iso
+    - .img
+    - .vdi
+    - .vhd
+    - .vhdx
+    - .vmdk
+    - .qcow
+    - .qcow2
+    - .raw
+    - .mdf
+    - .mds
+    - .nrg
+    - .toast
+    - .vfd
+    - .vcd
+    - .ova
+    - .ovf
+    color: '#9333ea'
+    description: Disk images and virtual machine files
+    icon: disc
   ebooks:
-    extensions: [".epub", ".mobi", ".azw", ".azw3", ".djvu", ".fb2", ".lit", ".lrf", ".pdb", ".pml", ".cbr", ".cbz", ".cb7", ".cbt", ".cba", ".chm", ".ibooks"]
-    color: "#fb923c"
-    description: "Digital books and publications"
-    icon: "book"
-
-  # Web Assets
+    extensions:
+    - .epub
+    - .mobi
+    - .azw
+    - .azw3
+    - .djvu
+    - .fb2
+    - .lit
+    - .lrf
+    - .pdb
+    - .pml
+    - .cbr
+    - .cbz
+    - .cb7
+    - .cbt
+    - .cba
+    - .chm
+    - .ibooks
+    color: '#fb923c'
+    description: Digital books and publications
+    icon: book
   web:
-    extensions: [".html", ".htm", ".css", ".scss", ".sass", ".less", ".map", ".vue", ".svelte", ".astro", ".erb", ".hbs", ".handlebars", ".ejs", ".pug", ".jade", ".twig"]
-    color: "#0ea5e9"
-    description: "Web development files and templates"
-    icon: "globe"
-
-  # Database Files
+    extensions:
+    - .html
+    - .htm
+    - .css
+    - .scss
+    - .sass
+    - .less
+    - .map
+    - .vue
+    - .svelte
+    - .astro
+    - .erb
+    - .hbs
+    - .handlebars
+    - .ejs
+    - .pug
+    - .jade
+    - .twig
+    color: '#0ea5e9'
+    description: Web development files and templates
+    icon: globe
   databases:
-    extensions: [".sqlite", ".sqlite3", ".db", ".mdb", ".accdb", ".sdb", ".odb", ".frm", ".myd", ".myi", ".ibd", ".ndf", ".ldf", ".fp7", ".fmp12", ".realm"]
-    color: "#059669"
-    description: "Database files and storage engines"
-    icon: "hard-drive"
-
-  # Scripts & Shell
+    extensions:
+    - .sqlite
+    - .sqlite3
+    - .db
+    - .mdb
+    - .accdb
+    - .sdb
+    - .odb
+    - .frm
+    - .myd
+    - .myi
+    - .ibd
+    - .ndf
+    - .ldf
+    - .fp7
+    - .fmp12
+    - .realm
+    color: '#059669'
+    description: Database files and storage engines
+    icon: hard-drive
   scripts:
-    extensions: [".sh", ".bash", ".zsh", ".fish", ".csh", ".tcsh", ".ksh", ".bat", ".cmd", ".ps1", ".psm1", ".psd1", ".vbs", ".applescript", ".scpt", ".awk", ".sed", ".perl", ".pl"]
-    color: "#2dd4bf"
-    description: "Shell scripts and automation files"
-    icon: "terminal"
-
-  # Encrypted & Secure Files
+    extensions:
+    - .sh
+    - .bash
+    - .zsh
+    - .fish
+    - .csh
+    - .tcsh
+    - .ksh
+    - .bat
+    - .cmd
+    - .ps1
+    - .psm1
+    - .psd1
+    - .vbs
+    - .applescript
+    - .scpt
+    - .awk
+    - .sed
+    - .perl
+    - .pl
+    color: '#2dd4bf'
+    description: Shell scripts and automation files
+    icon: terminal
   encrypted:
-    extensions: [".gpg", ".pgp", ".asc", ".sig", ".p7s", ".p7m", ".p12", ".pfx", ".cer", ".crt", ".der", ".pem", ".key", ".pub", ".keystore", ".jks", ".kdb", ".kdbx", ".aes", ".enc"]
-    color: "#dc2626"
-    description: "Encrypted files and security certificates"
-    icon: "lock"
-
-# Special Folders (macOS-specific)
+    extensions:
+    - .gpg
+    - .pgp
+    - .asc
+    - .sig
+    - .p7s
+    - .p7m
+    - .p12
+    - .pfx
+    - .cer
+    - .crt
+    - .der
+    - .pem
+    - .key
+    - .pub
+    - .keystore
+    - .jks
+    - .kdb
+    - .kdbx
+    - .aes
+    - .enc
+    color: '#dc2626'
+    description: Encrypted files and security certificates
+    icon: lock
 special_folders:
-  # System folders
   system:
     paths:
-      - "/System"
-      - "/Library"
-      - "/private"
-      - "/usr"
-      - "/bin"
-      - "/sbin"
-    color: "#ef4444"  # red
-    icon: "shield"
+    - /System
+    - /Library
+    - /private
+    - /usr
+    - /bin
+    - /sbin
+    color: '#ef4444'
+    icon: shield
     warn_on_scan: true
-
-  # User important folders
   important:
     paths:
-      - "~/Documents"
-      - "~/Desktop"
-      - "~/Downloads"
-      - "~/Pictures"
-      - "~/Music"
-      - "~/Videos"
-    color: "#3b82f6"  # blue
-    icon: "folder"
-
-  # Development folders
+    - ~/Documents
+    - ~/Desktop
+    - ~/Downloads
+    - ~/Pictures
+    - ~/Music
+    - ~/Videos
+    color: '#3b82f6'
+    icon: folder
   development:
     paths:
-      - "~/Development"
-      - "~/Projects"
-      - "~/Code"
-      - "~/git"
-      - "~/repos"
-    color: "#8b5cf6"  # violet
-    icon: "terminal"
-
-  # Application folders
+    - ~/Development
+    - ~/Projects
+    - ~/Code
+    - ~/git
+    - ~/repos
+    color: '#8b5cf6'
+    icon: terminal
   applications:
     paths:
-      - "/Applications"
-      - "~/Applications"
-      - "/Library/Application Support"
-      - "~/Library/Application Support"
-    color: "#06b6d4"  # cyan
-    icon: "package"
-
-# Visualization Settings
+    - /Applications
+    - ~/Applications
+    - /Library/Application Support
+    - ~/Library/Application Support
+    color: '#06b6d4'
+    icon: package
 visualization:
-  # Treemap
   treemap:
-    min_tile_size: 10  # pixels
+    min_tile_size: 10
     padding: 2
     show_labels: true
-    label_threshold: 50  # min pixels to show label
-
-  # Color schemes
-  color_by: "extension"  # options: extension, depth, size, type
-
-  # Size thresholds
+    label_threshold: 50
+  color_by: extension
   size_thresholds:
-    tiny: 1024           # 1 KB
-    small: 1048576       # 1 MB
-    medium: 104857600    # 100 MB
-    large: 1073741824    # 1 GB
-
-# Performance Settings
+    tiny: 1024
+    small: 1048576
+    medium: 104857600
+    large: 1073741824
 performance:
   max_depth: 50
   max_files_per_scan: 1000000
-  progress_update_interval: 100  # files
-
-# Server Settings
+  progress_update_interval: 100
 server:
-  host: "127.0.0.1"
+  host: 127.0.0.1
   port: 8924
-  cors_origins: ["http://localhost:5173", "http://localhost:3000"]
+  cors_origins:
+  - http://localhost:5173
+  - http://localhost:3000

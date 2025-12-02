@@ -51,10 +51,28 @@ async def handle_scan_progress(websocket: WebSocket, path: str) -> None:
         config = get_config()
         cache = get_cache()
 
-        # Check cache first
-        cached_result = cache.get(target)
+        # Get current filter configuration
+        current_filters = {
+            'exclude_patterns': config.exclude_patterns,
+            'exclude_hidden': config.exclude_hidden,
+            'min_file_size': config.min_file_size,
+            'max_depth': config.max_scan_depth
+        }
+
+        # Debug: log filter configuration
+        import json
+        print(f"[SCAN] Path: {target}")
+        print(f"[SCAN] Current filters: {json.dumps(current_filters, indent=2)}")
+
+        # Check cache first (will only match if filters are identical)
+        cached_result = cache.get(target, current_filters)
         if cached_result:
-            await websocket.send_json({
+            print(f"[CACHE HIT] Returning cached result")
+        else:
+            print(f"[CACHE MISS] No matching cache entry")
+        if cached_result:
+            # Remove internal datetime object before sending
+            response = {
                 "type": "complete",
                 "path": cached_result['path'],
                 "total_size": cached_result['total_size'],
@@ -63,7 +81,8 @@ async def handle_scan_progress(websocket: WebSocket, path: str) -> None:
                 "tree": cached_result['tree'],
                 "from_cache": True,
                 "cached_at": cached_result['cached_at_display']
-            })
+            }
+            await websocket.send_json(response)
             return
 
         # Check for special folder warnings
@@ -91,14 +110,20 @@ async def handle_scan_progress(websocket: WebSocket, path: str) -> None:
             "tree": tree_data
         }
 
-        # Cache the result
-        cache.set(target, result)
-
-        await websocket.send_json({
+        # Send response first (before caching modifies result)
+        response = {
             "type": "complete",
-            **result,
+            "path": result['path'],
+            "total_size": result['total_size'],
+            "files": result['files'],
+            "directories": result['directories'],
+            "tree": result['tree'],
             "from_cache": False
-        })
+        }
+        await websocket.send_json(response)
+
+        # Cache the result with current filter configuration (modifies result dict)
+        cache.set(target, current_filters, result)
 
     except WebSocketDisconnect:
         pass
@@ -124,13 +149,23 @@ def serialize_with_metadata(node: FileInfo, config) -> dict:
 
     # Add folder info for directories
     if node.is_directory:
-        folder_info = config.get_folder_info(node.path)
-        if folder_info:
-            result["folder_info"] = folder_info
-
-        # Recursively serialize children
         from diskusage.scanner.base import DirInfo
         if isinstance(node, DirInfo):
+            # Mark if at depth limit
+            if node.at_depth_limit:
+                result["at_depth_limit"] = True
+                result["folder_info"] = {
+                    "category": "depth_limit",
+                    "color": "#fb923c",
+                    "icon": "layers",
+                    "description": "Folder at scan depth limit"
+                }
+            else:
+                folder_info = config.get_folder_info(node.path)
+                if folder_info:
+                    result["folder_info"] = folder_info
+
+            # Recursively serialize children
             result["children"] = [
                 serialize_with_metadata(child, config)
                 for child in node.iter_children()

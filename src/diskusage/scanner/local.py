@@ -25,8 +25,8 @@ class LocalScanJob(ScanJob):
     ) -> None:
         super().__init__(follow_symlinks=follow_symlinks, progress=progress)
         self.exclusions = exclusions or ExclusionRules()
-        self.max_depth = max_depth
         config = get_config()
+        self.max_depth = max_depth if max_depth is not None else (config.max_scan_depth if config.max_scan_depth > 0 else None)
         self.min_file_size = min_file_size if min_file_size is not None else config.min_file_size
 
     def scan(self, root_path: Path) -> DirInfo:
@@ -71,9 +71,13 @@ class LocalScanJob(ScanJob):
                     directory.add_child(child)
                     if self.progress:
                         self.progress(child)
-                    if self.max_depth is None or depth < self.max_depth:
+                    if self.max_depth is None or self.max_depth == 0 or (depth + 1) < self.max_depth:
                         self._walk(child, depth=depth + 1)
-                    child.update_aggregates()
+                        child.update_aggregates()
+                    else:
+                        # At depth limit: mark and calculate total size without recursing
+                        child.at_depth_limit = True
+                        child.size = self._calculate_dir_size(entry_path)
                 else:
                     # Skip files below minimum size threshold
                     if stat_result.st_size < self.min_file_size:
@@ -91,6 +95,28 @@ class LocalScanJob(ScanJob):
                         self.progress(child)
 
         directory.update_aggregates()
+
+    def _calculate_dir_size(self, dir_path: Path) -> int:
+        """Calculate total size of directory without detailed scanning."""
+        total_size = 0
+        try:
+            for entry in os.scandir(dir_path):
+                try:
+                    stat_result = entry.stat(follow_symlinks=self.follow_symlinks)
+                    if entry.is_file(follow_symlinks=self.follow_symlinks):
+                        if stat_result.st_size >= self.min_file_size:
+                            total_size += stat_result.st_size
+                    elif entry.is_dir(follow_symlinks=self.follow_symlinks):
+                        # Recursively sum subdirectories
+                        entry_path = Path(entry.path)
+                        if not (self.exclusions and self.exclusions.should_exclude(entry_path)):
+                            total_size += self._calculate_dir_size(entry_path)
+                except OSError:
+                    continue
+        except OSError:
+            pass
+
+        return total_size
 
 
 __all__ = ["LocalScanJob"]

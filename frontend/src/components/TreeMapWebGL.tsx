@@ -3,7 +3,6 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three-stdlib'
 import * as d3 from 'd3'
 import { formatBytes } from '../lib/utils'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { BarChart3, Box, Layers } from 'lucide-react'
 import { Button } from './ui/button'
 
@@ -307,49 +306,56 @@ export function TreeMapWebGL({ data, config }: Props) {
   }, [data, config, viewMode, vizMode])
 
   return (
-    <Card>
-      <CardHeader>
+    <div className="glass-panel rounded-xl overflow-hidden">
+      {/* Header */}
+      <div className="px-5 py-4 border-b border-border/50">
         <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              Disk Usage Treemap (WebGL)
-            </CardTitle>
-            <CardDescription>
-              GPU-accelerated visualization. {viewMode === '3d' ? 'Drag to rotate, scroll to zoom' : 'Hover over tiles for details'}
-            </CardDescription>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <BarChart3 className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold">Storage Map</h3>
+              <p className="text-xs text-muted-foreground">
+                {viewMode === '3d' ? 'Drag to rotate, scroll to zoom' : 'Hover for details, scroll to zoom'}
+              </p>
+            </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-1.5">
             <Button
-              variant={viewMode === '2d' ? 'default' : 'outline'}
+              variant={viewMode === '2d' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('2d')}
+              className={`h-8 px-3 gap-1.5 ${viewMode === '2d' ? 'bg-primary/10 text-primary hover:bg-primary/20' : 'text-muted-foreground hover:text-foreground'}`}
             >
-              <Layers className="h-4 w-4 mr-1" />
+              <Layers className="h-3.5 w-3.5" />
               2D
             </Button>
             <Button
-              variant={viewMode === '3d' ? 'default' : 'outline'}
+              variant={viewMode === '3d' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('3d')}
+              className={`h-8 px-3 gap-1.5 ${viewMode === '3d' ? 'bg-primary/10 text-primary hover:bg-primary/20' : 'text-muted-foreground hover:text-foreground'}`}
             >
-              <Box className="h-4 w-4 mr-1" />
+              <Box className="h-3.5 w-3.5" />
               3D
             </Button>
             {viewMode === '3d' && (
               <>
-                <div className="border-l mx-1" />
+                <div className="w-px h-5 bg-border/50 mx-1" />
                 <Button
-                  variant={vizMode === 'size' ? 'default' : 'outline'}
+                  variant={vizMode === 'size' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setVizMode('size')}
+                  className={`h-8 px-3 text-xs ${vizMode === 'size' ? 'bg-accent/10 text-accent hover:bg-accent/20' : 'text-muted-foreground hover:text-foreground'}`}
                 >
                   Size
                 </Button>
                 <Button
-                  variant={vizMode === 'depth' ? 'default' : 'outline'}
+                  variant={vizMode === 'depth' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setVizMode('depth')}
+                  className={`h-8 px-3 text-xs ${vizMode === 'depth' ? 'bg-accent/10 text-accent hover:bg-accent/20' : 'text-muted-foreground hover:text-foreground'}`}
                 >
                   Depth
                 </Button>
@@ -357,23 +363,27 @@ export function TreeMapWebGL({ data, config }: Props) {
             )}
           </div>
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="border rounded-md overflow-hidden bg-muted/30 relative">
-          <div ref={containerRef} />
-          {tooltip && (
-            <div
-              className="fixed pointer-events-none bg-black/95 text-white px-3 py-2 rounded-md shadow-lg text-xs font-mono whitespace-pre-line z-50 max-w-md border border-white/20"
-              style={{
-                left: tooltip.x + 10,
-                top: tooltip.y - 50
-              }}
-            >
-              {tooltip.text}
+      </div>
+
+      {/* Treemap Container */}
+      <div className="treemap-container relative">
+        <div ref={containerRef} />
+        {tooltip && (
+          <div
+            className="fixed pointer-events-none z-50 max-w-sm animate-fade-in"
+            style={{
+              left: tooltip.x + 12,
+              top: tooltip.y - 60
+            }}
+          >
+            <div className="glass-panel rounded-lg px-4 py-3 shadow-glow-lg border border-primary/20">
+              <div className="text-xs font-mono whitespace-pre-line text-foreground">
+                {tooltip.text}
+              </div>
             </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+          </div>
+        )}
+      </div>
+    </div>
   )
 }

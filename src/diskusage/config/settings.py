@@ -78,6 +78,11 @@ class Config:
         return self.get('filters.min_file_size', 0)
 
     @property
+    def max_scan_depth(self) -> int:
+        """Maximum directory depth to scan (0 = unlimited)."""
+        return self.get('filters.max_depth', 0)
+
+    @property
     def extension_templates(self) -> Dict[str, Dict]:
         """Get extension templates."""
         return self.get('extension_templates', {})
