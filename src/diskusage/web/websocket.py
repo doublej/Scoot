@@ -1,5 +1,6 @@
 """WebSocket handler for real-time scan progress."""
 
+import asyncio
 from pathlib import Path
 
 from fastapi import WebSocket, WebSocketDisconnect
@@ -8,12 +9,15 @@ from diskusage.scanner.async_scanner import AsyncScanJob
 from diskusage.scanner.base import FileInfo
 from diskusage.config.settings import get_config
 from diskusage.cache.store import get_cache
+from diskusage.web.scan_manager import get_scan_manager
 
 
 async def handle_scan_progress(websocket: WebSocket, path: str) -> None:
     """Handle WebSocket scan with real-time progress updates."""
     await websocket.accept()
 
+    manager = get_scan_manager()
+    session_id = None
     files_processed = 0
     dirs_processed = 0
     total_size = 0
@@ -28,19 +32,22 @@ async def handle_scan_progress(websocket: WebSocket, path: str) -> None:
             files_processed += 1
             total_size += node.size
 
+        # Update manager state
+        if session_id:
+            manager.update_progress(
+                session_id, files_processed, dirs_processed,
+                total_size, str(node.path)
+            )
+
         # Send update every 100 files
         if files_processed % 100 == 0:
-            try:
-                import asyncio
-                asyncio.create_task(websocket.send_json({
-                    "type": "progress",
-                    "files": files_processed,
-                    "directories": dirs_processed,
-                    "total_size": total_size,
-                    "current_path": str(node.path)
-                }))
-            except:
-                pass
+            asyncio.create_task(websocket.send_json({
+                "type": "progress",
+                "files": files_processed,
+                "directories": dirs_processed,
+                "total_size": total_size,
+                "current_path": str(node.path)
+            }))
 
     try:
         target = Path(path).expanduser()
@@ -94,7 +101,14 @@ async def handle_scan_progress(websocket: WebSocket, path: str) -> None:
                 "category": folder_info['category']
             })
 
-        await websocket.send_json({"type": "started", "path": str(target)})
+        # Register scan with manager
+        session_id = manager.start_scan(str(target))
+
+        await websocket.send_json({
+            "type": "started",
+            "path": str(target),
+            "session_id": session_id
+        })
 
         scanner = AsyncScanJob(progress_callback=progress_callback)
         root = await scanner.scan_async(target)
@@ -118,16 +132,24 @@ async def handle_scan_progress(websocket: WebSocket, path: str) -> None:
             "files": result['files'],
             "directories": result['directories'],
             "tree": result['tree'],
-            "from_cache": False
+            "from_cache": False,
+            "session_id": session_id
         }
         await websocket.send_json(response)
+
+        # Mark scan complete in manager
+        if session_id:
+            manager.complete_scan(session_id, result)
 
         # Cache the result with current filter configuration (modifies result dict)
         cache.set(target, current_filters, result)
 
     except WebSocketDisconnect:
+        # Client disconnected - scan result stored in manager if completed
         pass
     except Exception as e:
+        if session_id:
+            manager.fail_scan(session_id, str(e))
         await websocket.send_json({"type": "error", "message": str(e)})
 
 
