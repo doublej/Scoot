@@ -17,6 +17,22 @@ function formatElapsed(ms: number): string {
   return `${secs}s`
 }
 
+type TaskStatus = 'done' | 'active' | 'pending'
+
+function TaskLine({ status, label, detail }: { status: TaskStatus; label: string; detail?: string }) {
+  const icon = status === 'done' ? '×' : status === 'active' ? '○' : '-'
+  const opacity = status === 'pending' ? 'opacity-40' : ''
+  const animate = status === 'active' ? 'animate-pulse' : ''
+
+  return (
+    <div className={`flex items-center gap-3 font-mono text-sm ${opacity}`}>
+      <span className={`w-4 text-center ${animate}`}>{icon}</span>
+      <span>{label}</span>
+      {detail && <span className="text-muted-foreground ml-auto">{detail}</span>}
+    </div>
+  )
+}
+
 export function ScanProgress({ progress, startTime }: Props) {
   const [elapsed, setElapsed] = useState(0)
 
@@ -28,62 +44,45 @@ export function ScanProgress({ progress, startTime }: Props) {
     return () => clearInterval(interval)
   }, [startTime])
 
-  const filesPerSec = elapsed > 0 ? Math.round((progress?.files || 0) / (elapsed / 1000)) : 0
-
-  if (!progress) {
-    return (
-      <div className="py-5">
-        <div className="flex items-center gap-4 px-1">
-          <div className="w-3 h-3 bg-primary animate-pulse" />
-          <span className="text-sm text-muted-foreground font-medium">Connecting...</span>
-          {startTime && <span className="text-sm text-muted-foreground ml-auto">{formatElapsed(elapsed)}</span>}
-        </div>
-      </div>
-    )
-  }
+  const filesPerSec = elapsed > 1000 ? Math.round((progress?.files || 0) / (elapsed / 1000)) : 0
+  const hasFiles = (progress?.files || 0) > 0
+  const hasDirs = (progress?.directories || 0) > 0
 
   return (
-    <div className="py-5 space-y-5">
-      {/* Current path - prominent */}
-      <div className="flex items-center gap-4 px-1">
-        <div className="w-3 h-3 bg-primary animate-pulse" />
-        <code className="text-sm flex-1 truncate font-medium">{progress.current_path}</code>
-        <span className="text-sm text-muted-foreground whitespace-nowrap font-medium">{formatElapsed(elapsed)}</span>
-      </div>
-
-      {/* Stats grid */}
-      <div className="grid grid-cols-5 gap-3">
-        <div className="data-cell">
-          <div className="label">FILES</div>
-          <div className="value text-tabular">{progress.files.toLocaleString()}</div>
-        </div>
-        <div className="data-cell">
-          <div className="label">DIRS</div>
-          <div className="value text-tabular">{progress.directories.toLocaleString()}</div>
-        </div>
-        <div className="data-cell">
-          <div className="label">SIZE</div>
-          <div className="value text-tabular">{formatBytes(progress.total_size)}</div>
-        </div>
-        <div className="data-cell">
-          <div className="label">RATE</div>
-          <div className="value text-tabular">{filesPerSec.toLocaleString()}/s</div>
-        </div>
-        <div className="data-cell">
-          <div className="label">ELAPSED</div>
-          <div className="value text-tabular">{formatElapsed(elapsed)}</div>
-        </div>
-      </div>
-
-      {/* Animated progress bar */}
-      <div className="h-1.5 bg-secondary overflow-hidden">
-        <div
-          className="h-full bg-primary"
-          style={{
-            width: '40%',
-            animation: 'scan-slide 1s linear infinite'
-          }}
+    <div className="py-5 space-y-3">
+      <div className="space-y-1">
+        <TaskLine
+          status="done"
+          label="Connected to server"
         />
+        <TaskLine
+          status={progress ? 'done' : 'active'}
+          label="Initializing scan"
+        />
+        <TaskLine
+          status={hasDirs ? 'done' : progress ? 'active' : 'pending'}
+          label="Listing directories"
+          detail={hasDirs ? `${progress?.directories.toLocaleString()} dirs` : undefined}
+        />
+        <TaskLine
+          status={hasFiles ? 'active' : 'pending'}
+          label="Processing files"
+          detail={hasFiles ? `${progress?.files.toLocaleString()} files · ${formatBytes(progress?.total_size || 0)} · ${filesPerSec}/s` : undefined}
+        />
+        <TaskLine
+          status="pending"
+          label="Building visualization"
+        />
+      </div>
+
+      {progress?.current_path && (
+        <code className="block text-xs text-muted-foreground truncate pl-7">
+          {progress.current_path}
+        </code>
+      )}
+
+      <div className="text-xs text-muted-foreground pl-7">
+        {formatElapsed(elapsed)}
       </div>
     </div>
   )
