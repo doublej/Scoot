@@ -44,34 +44,31 @@ export function ScanProgress({ progress, startTime }: Props) {
     return () => clearInterval(interval)
   }, [startTime])
 
-  const filesPerSec = elapsed > 1000 ? Math.round((progress?.files || 0) / (elapsed / 1000)) : 0
-  const hasFiles = (progress?.files || 0) > 0
-  const hasDirs = (progress?.directories || 0) > 0
+  const files = progress?.files || 0
+  const dirs = progress?.directories || 0
+  const size = progress?.total_size || 0
+  const filesPerSec = elapsed > 1000 ? Math.round(files / (elapsed / 1000)) : 0
+
+  // Phases: connecting → listing → processing
+  const isListing = progress && files === 0
+  const isProcessing = files > 0
 
   return (
     <div className="py-5 space-y-3">
       <div className="space-y-1">
         <TaskLine
           status="done"
-          label="Connected to server"
+          label="Connected"
         />
         <TaskLine
-          status={progress ? 'done' : 'active'}
-          label="Initializing scan"
+          status={isListing ? 'active' : isProcessing ? 'done' : 'pending'}
+          label="Scanning directories"
+          detail={dirs > 0 ? `${dirs.toLocaleString()}` : undefined}
         />
         <TaskLine
-          status={hasDirs ? 'done' : progress ? 'active' : 'pending'}
-          label="Listing directories"
-          detail={hasDirs ? `${progress?.directories.toLocaleString()} dirs` : undefined}
-        />
-        <TaskLine
-          status={hasFiles ? 'active' : 'pending'}
+          status={isProcessing ? 'active' : 'pending'}
           label="Processing files"
-          detail={hasFiles ? `${progress?.files.toLocaleString()} files · ${formatBytes(progress?.total_size || 0)} · ${filesPerSec}/s` : undefined}
-        />
-        <TaskLine
-          status="pending"
-          label="Building visualization"
+          detail={isProcessing ? `${files.toLocaleString()} · ${formatBytes(size)} · ${filesPerSec}/s` : undefined}
         />
       </div>
 
