@@ -57,6 +57,9 @@ class AsyncScanJob(ScanJob):
         if self._cancelled:
             return
 
+        # Send progress when entering directory (feedback during listing)
+        await self._send_progress(dir_info)
+
         try:
             entries = list(os.scandir(dir_info.path))
 
